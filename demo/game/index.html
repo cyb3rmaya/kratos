@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>점프업 — 이벤트 웹게임 데모 | 크라토스</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../demo.css">
+<style>
+body { background:#0b0d13; color:#e9ebf2; }
+.dnav { border-color:#1e222c; }
+.dmenu { color:#8b93a7; }
+
+.wrapg { padding:34px 0 70px; display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:34px; }
+.head h1 { font-size:clamp(26px,4vw,40px); font-weight:800; letter-spacing:-0.04em; }
+.head p { color:#8b93a7; margin-top:10px; font-size:15px; }
+
+.stage { position:relative; margin-top:22px; border:1px solid #1e222c; border-radius:14px; overflow:hidden;
+  background:linear-gradient(180deg,#12151d,#0b0d13); aspect-ratio:16/9; }
+.stage canvas { width:100%; height:100%; }
+.hud { position:absolute; top:14px; left:16px; right:16px; display:flex; gap:16px;
+  font-family:var(--mono); font-size:12px; color:#8b93a7; pointer-events:none; }
+.hud b { color:#ffb020; font-size:15px; }
+.hud .best { margin-left:auto; }
+.overlay { position:absolute; inset:0; display:grid; place-items:center; text-align:center;
+  background:rgba(8,10,15,.82); backdrop-filter:blur(3px); padding:20px; }
+.overlay.hide { display:none; }
+.overlay h2 { font-size:24px; font-weight:800; letter-spacing:-0.03em; }
+.overlay p { color:#8b93a7; font-size:14px; margin-top:9px; }
+.play { margin-top:18px; height:46px; padding:0 26px; border-radius:8px; background:#4c6fff; color:#fff; font-weight:700; font-size:15px; }
+.play:hover { background:#5f7fff; }
+.keys { font-family:var(--mono); font-size:11.5px; color:#5f6779; margin-top:14px; }
+
+.coupon { margin-top:18px; border:1px dashed #ffb020; border-radius:10px; padding:16px; background:rgba(255,176,32,.07); display:none; }
+.coupon.on { display:block; }
+.coupon b { color:#ffb020; font-size:14px; }
+.coupon .code { font-family:var(--mono); font-size:20px; font-weight:700; letter-spacing:.12em; margin-top:8px; }
+.coupon p { font-size:12.5px; color:#8b93a7; margin-top:6px; }
+
+.side h3 { font-size:14px; font-weight:800; letter-spacing:-0.02em; }
+.board { border:1px solid #1e222c; border-radius:12px; margin-top:12px; overflow:hidden; }
+.rank { display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid #1e222c; font-size:13.5px; }
+.rank:last-child { border-bottom:0; }
+.rank i { font-style:normal; font-family:var(--mono); font-size:12px; color:#5f6779; width:18px; }
+.rank.top i { color:#ffb020; }
+.rank .sc { margin-left:auto; font-family:var(--mono); font-weight:700; }
+.rank.me { background:rgba(76,111,255,.12); color:#fff; }
+.rules { margin-top:24px; border:1px solid #1e222c; border-radius:12px; padding:16px; }
+.rules li { font-size:12.5px; color:#8b93a7; padding:5px 0 5px 14px; position:relative; line-height:1.6; }
+.rules li::before { content:""; position:absolute; left:0; top:11px; width:4px; height:4px; border-radius:50%; background:#4c6fff; }
+
+@media (max-width:900px){ .wrapg{grid-template-columns:minmax(0,1fr);} }
+</style>
+</head>
+<body>
+
+<div class="kbar">
+  <span class="kbar-mark"></span><b>KRATOS</b>
+  <span class="kbar-tag">LIVE DEMO</span>
+  <span class="kbar-note">이벤트 웹게임 데모 — 설치 없이 링크만으로 플레이·랭킹·쿠폰까지</span>
+  <a class="kbar-back" href="../../index.html">← 크라토스로 돌아가기</a>
+</div>
+
+<div class="dwrap">
+  <nav class="dnav">
+    <span class="dlogo">점프업</span>
+    <div class="dmenu"><a href="#">이벤트 안내</a><a href="#">랭킹</a><a href="#">내 쿠폰</a></div>
+  </nav>
+
+  <div class="wrapg">
+    <div>
+      <div class="head">
+        <h1>1,000점 넘기면 쿠폰 지급</h1>
+        <p>설치 없이 브라우저에서 바로 플레이. 장애물을 피해 최대한 멀리 가세요.</p>
+      </div>
+
+      <div class="stage" id="stage" tabindex="0">
+        <canvas id="cv"></canvas>
+        <div class="hud">
+          <span>SCORE <b id="score">0</b></span>
+          <span>SPEED <b id="spd">1.0</b>x</span>
+          <span class="best">BEST <b id="best">0</b></span>
+        </div>
+        <div class="overlay" id="ov">
+          <div>
+            <h2 id="ovT">점프업</h2>
+            <p id="ovP">장애물을 피해 달리세요. 오래 버틸수록 빨라집니다.</p>
+            <button class="play" id="play">게임 시작</button>
+            <div class="keys">클릭 · 탭 · 스페이스바로 점프</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="coupon" id="coupon">
+        <b>🎉 쿠폰이 발급되었습니다</b>
+        <div class="code" id="code">JUMP-0000</div>
+        <p>실제 서비스에서는 이 시점에 서버가 점수를 검증한 뒤 쿠폰을 발급하고 알림톡을 보냅니다.</p>
+      </div>
+    </div>
+
+    <aside class="side">
+      <h3>실시간 랭킹</h3>
+      <div class="board" id="board"></div>
+      <div class="rules">
+        <h3>이벤트 안내</h3>
+        <ul>
+          <li>1,000점 이상 달성 시 5,000원 할인 쿠폰 자동 발급</li>
+          <li>1일 3회까지 도전 가능</li>
+          <li>주간 1위에게 추가 경품 지급</li>
+          <li>비정상 점수는 서버 검증 후 제외됩니다</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const cv = $("#cv"), ctx = cv.getContext("2d");
+const stage = $("#stage");
+let W=0,H=0,dpr=Math.min(devicePixelRatio||1,2);
+
+function resize(){
+  const r = cv.getBoundingClientRect();
+  W=r.width; H=r.height;
+  cv.width=W*dpr; cv.height=H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+new ResizeObserver(()=>{resize();draw();}).observe(cv);
+
+const GROUND = () => H*0.78;
+const SIZE = () => Math.max(20, H*0.06);
+let running=false, over=false, score=0, best=0, y=0, vy=0, obs=[], clouds=[], t=0, speed=1, raf=null;
+
+function reset(){
+  score=0; y=0; vy=0; obs=[]; t=0; speed=1; over=false;
+  clouds = [0,1,2,3].map(i=>({x:Math.random()*1.2, y:0.12+Math.random()*0.3, s:0.3+Math.random()*0.5}));
+  $("#coupon").classList.remove("on");
+}
+function start(){
+  reset(); running=true;
+  $("#ov").classList.add("hide");
+  stage.focus();
+  loop();
+}
+function jump(){
+  if(!running){ start(); return; }
+  if(y <= 1) vy = SIZE()*0.62;
+}
+
+function loop(){
+  if(!running) return;
+  raf = requestAnimationFrame(loop);
+  t++;
+  speed = Math.min(1 + t/1400, 2.6);
+  $("#spd").textContent = speed.toFixed(1);
+
+  const g = SIZE()*0.042;
+  vy -= g; y += vy;
+  if(y<0){ y=0; vy=0; }
+
+  const gap = Math.max(46 - speed*7, 26);
+  if(t % Math.round(gap) === 0 && Math.random() > 0.35){
+    obs.push({ x:W+20, w:SIZE()*0.42+Math.random()*SIZE()*0.3, h:SIZE()*(0.55+Math.random()*0.85) });
+  }
+  const px = W*0.14;
+  obs.forEach(o=>o.x -= 3.4*speed*(W/900));
+  obs = obs.filter(o=>o.x+o.w > -30);
+  clouds.forEach(c=>{ c.x -= 0.0006*speed; if(c.x < -0.3) c.x = 1.25; });
+
+  for(const o of obs){
+    if(px + SIZE() > o.x && px < o.x + o.w && y < o.h){ gameOver(); return; }
+  }
+
+  score += Math.round(speed*2);
+  $("#score").textContent = score;
+  draw();
+}
+
+function gameOver(){
+  running=false; over=true;
+  cancelAnimationFrame(raf);
+  if(score > best){ best = score; $("#best").textContent = best; }
+  $("#ovT").textContent = "게임 종료";
+  $("#ovP").textContent = `${score.toLocaleString()}점을 기록했습니다.` + (score>=1000 ? " 쿠폰 조건을 달성했습니다!" : " 1,000점을 넘기면 쿠폰이 나옵니다.");
+  $("#play").textContent = "다시 도전";
+  $("#ov").classList.remove("hide");
+  if(score>=1000){
+    $("#code").textContent = "JUMP-" + String(Math.floor(Math.random()*9000)+1000);
+    $("#coupon").classList.add("on");
+  }
+  board(score);
+  draw();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const S = SIZE(), gy = GROUND();
+
+  // 구름
+  ctx.fillStyle = "rgba(255,255,255,.045)";
+  clouds.forEach(c=>{
+    const cx=c.x*W, cy=c.y*H, r=S*c.s;
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.arc(cx+r*0.8,cy+r*0.15,r*0.75,0,7); ctx.arc(cx-r*0.8,cy+r*0.2,r*0.6,0,7); ctx.fill();
+  });
+
+  // 바닥
+  ctx.strokeStyle="rgba(255,255,255,.14)"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,gy+0.5); ctx.lineTo(W,gy+0.5); ctx.stroke();
+  ctx.fillStyle="rgba(255,255,255,.07)";
+  const step=W/16;
+  for(let i=0;i<18;i++){
+    const x=((i*step-((t*3.4*speed*(W/900))%step))+W)%(W+step)-step/2;
+    ctx.fillRect(x,gy+9,step*0.42,2);
+  }
+
+  // 장애물
+  obs.forEach(o=>{
+    ctx.fillStyle="#4c6fff";
+    ctx.fillRect(o.x, gy-o.h, o.w, o.h);
+    ctx.fillStyle="rgba(255,255,255,.22)";
+    ctx.fillRect(o.x, gy-o.h, o.w, 3);
+  });
+
+  // 플레이어
+  const px=W*0.14, py=gy-S-y;
+  ctx.fillStyle="#ffb020";
+  ctx.fillRect(px,py,S,S);
+  ctx.fillStyle="#0b0d13";
+  ctx.fillRect(px+S*0.58, py+S*0.26, S*0.15, S*0.15);
+  // 그림자
+  ctx.fillStyle=`rgba(0,0,0,${0.28 - Math.min(y/(S*4),0.24)})`;
+  ctx.beginPath(); ctx.ellipse(px+S/2, gy+4, S*0.44, S*0.11, 0, 0, 7); ctx.fill();
+}
+
+/* 랭킹 */
+const RANK = [
+  {n:"감귤킹", s:4820},{n:"제주토박이", s:3915},{n:"점프마스터", s:3140},
+  {n:"이OO", s:2470},{n:"박OO", s:1980},{n:"김OO", s:1520},{n:"최OO", s:1180},
+];
+function board(my){
+  const list = [...RANK];
+  if(my !== undefined) list.push({n:"나", s:my, me:true});
+  list.sort((a,b)=>b.s-a.s);
+  $("#board").innerHTML = list.slice(0,8).map((r,i)=>
+    `<div class="rank${i<3?" top":""}${r.me?" me":""}"><i>${i+1}</i><span>${r.n}</span><span class="sc">${r.s.toLocaleString()}</span></div>`
+  ).join("");
+}
+
+stage.addEventListener("click", jump);
+stage.addEventListener("touchstart", e=>{ e.preventDefault(); jump(); }, {passive:false});
+document.addEventListener("keydown", e=>{
+  if(e.code==="Space" || e.code==="ArrowUp" || e.code==="Enter"){ e.preventDefault(); jump(); }
+});
+$("#play").addEventListener("click", e=>{ e.stopPropagation(); start(); });
+
+resize(); reset(); board(); draw();
+</script>
+</body>
+</html>

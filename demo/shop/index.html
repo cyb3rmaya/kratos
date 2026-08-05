@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>제주감귤상회 — 쇼핑몰 데모 | 크라토스</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../demo.css">
+<style>
+.hero { padding: 40px 0 30px; border-bottom: 1px solid var(--line); }
+.kicker { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; color: var(--k-cobalt); font-weight: 700; }
+.hero h1 { font-size: clamp(28px,4.4vw,44px); font-weight: 800; letter-spacing: -0.04em; margin-top: 10px; line-height: 1.15; }
+.hero p { color: var(--muted); margin-top: 12px; font-size: 15px; }
+.notice { display:inline-flex; align-items:center; gap:8px; margin-top:18px; background:#fff8e8; border:1px solid #ffe2a8; color:#8a5c00; font-size:13px; padding:9px 14px; border-radius:8px; }
+
+.bar { display:flex; align-items:center; gap:10px; padding: 22px 0 16px; flex-wrap: wrap; }
+.cats { display:flex; gap:8px; flex-wrap:wrap; }
+.cat { font-size:14px; padding:8px 15px; border-radius:6px; border:1px solid var(--line); color:var(--muted); transition:.16s; }
+.cat:hover { border-color:#c9cfdd; color:var(--ink); }
+.cat.on { background:var(--ink); border-color:var(--ink); color:#fff; }
+.sortsel { margin-left:auto; border:1px solid var(--line); border-radius:6px; padding:8px 12px; font-size:14px; color:var(--muted); background:#fff; }
+
+.grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px; padding-bottom:60px; }
+.card { border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; transition:.2s; }
+.card:hover { border-color:#c9cfdd; transform:translateY(-3px); box-shadow:0 12px 28px -18px rgba(20,22,26,.4); }
+.ph { aspect-ratio:4/3; position:relative; }
+.flag { position:absolute; top:10px; left:10px; font-size:11px; font-weight:700; background:rgba(20,22,26,.86); color:#fff; padding:4px 9px; border-radius:5px; }
+.flag.pre { background:var(--k-cobalt); }
+.cbody { padding:14px 15px 16px; display:flex; flex-direction:column; flex:1; }
+.cname { font-size:15px; font-weight:700; letter-spacing:-0.02em; }
+.cdesc { font-size:13px; color:var(--muted); margin-top:5px; flex:1; }
+.cship { font-size:11.5px; color:var(--k-cobalt); font-family:var(--mono); margin-top:8px; }
+.cprice { font-size:19px; font-weight:800; margin-top:10px; letter-spacing:-0.03em; }
+.cprice s { font-size:13px; color:var(--dim); font-weight:500; margin-right:6px; }
+.opts { display:flex; gap:6px; margin-top:10px; }
+.opt { flex:1; font-size:12px; padding:6px 0; border:1px solid var(--line); border-radius:5px; color:var(--muted); }
+.opt.on { border-color:var(--ink); color:var(--ink); font-weight:700; }
+.add { margin-top:10px; height:38px; border-radius:7px; background:var(--ink); color:#fff; font-size:13.5px; font-weight:700; transition:.16s; }
+.add:hover { background:var(--k-cobalt); }
+.add.ok { background:var(--k-cobalt); }
+
+/* 장바구니 */
+.cartbtn { position:fixed; right:20px; bottom:20px; z-index:50; height:52px; padding:0 22px; border-radius:26px;
+  background:var(--ink); color:#fff; font-weight:700; font-size:14px; display:flex; align-items:center; gap:10px;
+  box-shadow:0 14px 34px -14px rgba(20,22,26,.7); }
+.cartbtn i { font-style:normal; background:var(--k-amber); color:#231700; min-width:22px; height:22px; border-radius:11px; display:grid; place-items:center; font-size:12px; }
+.drawer { position:fixed; inset:0; z-index:60; display:none; }
+.drawer.open { display:block; }
+.drawer-back { position:absolute; inset:0; background:rgba(20,22,26,.5); }
+.drawer-panel { position:absolute; top:0; right:0; bottom:0; width:min(400px,100%); background:#fff; display:flex; flex-direction:column; }
+.drawer-h { padding:20px; border-bottom:1px solid var(--line); display:flex; align-items:center; }
+.drawer-h b { font-size:17px; font-weight:800; letter-spacing:-0.02em; }
+.drawer-h button { margin-left:auto; font-size:20px; color:var(--muted); }
+.drawer-list { flex:1; overflow:auto; padding:8px 20px; }
+.li { display:flex; gap:12px; padding:16px 0; border-bottom:1px solid var(--line); }
+.li-ph { width:56px; height:56px; border-radius:8px; flex:none; }
+.li b { font-size:14px; font-weight:700; display:block; }
+.li small { font-size:12px; color:var(--muted); }
+.qty { display:flex; align-items:center; gap:8px; margin-top:7px; }
+.qty button { width:24px; height:24px; border:1px solid var(--line); border-radius:5px; font-size:13px; }
+.qty span { font-size:13px; min-width:16px; text-align:center; }
+.li-p { margin-left:auto; text-align:right; font-weight:800; font-size:14px; }
+.li-del { display:block; font-size:11px; color:var(--dim); margin-top:8px; text-decoration:underline; }
+.empty { text-align:center; color:var(--dim); font-size:14px; padding:60px 0; }
+.drawer-f { border-top:1px solid var(--line); padding:20px; }
+.row { display:flex; justify-content:space-between; font-size:14px; color:var(--muted); padding:4px 0; }
+.row.total { color:var(--ink); font-size:18px; font-weight:800; padding-top:12px; margin-top:8px; border-top:1px solid var(--line); }
+.pay { width:100%; height:50px; border-radius:8px; background:var(--k-cobalt); color:#fff; font-weight:700; font-size:15px; margin-top:14px; }
+.pay:disabled { background:var(--line); color:var(--dim); cursor:not-allowed; }
+.paid { font-size:13px; color:var(--k-cobalt); text-align:center; margin-top:10px; min-height:19px; }
+
+@media (max-width:900px){ .grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
+@media (max-width:520px){ .grid{grid-template-columns:minmax(0,1fr);} .sortsel{margin-left:0;} }
+</style>
+</head>
+<body>
+
+<div class="kbar">
+  <span class="kbar-mark"></span><b>KRATOS</b>
+  <span class="kbar-tag">LIVE DEMO</span>
+  <span class="kbar-note">쇼핑몰 데모 — 장바구니·옵션·결제 흐름이 실제로 동작합니다</span>
+  <a class="kbar-back" href="../../index.html">← 크라토스로 돌아가기</a>
+</div>
+
+<div class="dwrap">
+  <nav class="dnav">
+    <span class="dlogo">제주감귤상회</span>
+    <div class="dmenu"><a href="#">전체상품</a><a href="#">예약판매</a><a href="#">정기구독</a><a href="#">후기</a><a href="#">문의</a></div>
+  </nav>
+</div>
+
+<header class="hero">
+  <div class="dwrap">
+    <div class="kicker">11월 수확 예약판매</div>
+    <h1>따는 날 바로 보냅니다</h1>
+    <p>서귀포 노지 감귤. 수확 캘린더에 맞춰 출고일이 자동으로 안내됩니다.</p>
+    <div class="notice">📦 예약상품과 일반상품을 함께 담으면 배송이 분리됩니다</div>
+  </div>
+</header>
+
+<div class="dwrap">
+  <div class="bar">
+    <div class="cats">
+      <button class="cat on" data-cat="all">전체</button>
+      <button class="cat" data-cat="pre">예약판매</button>
+      <button class="cat" data-cat="now">바로배송</button>
+      <button class="cat" data-cat="sub">정기구독</button>
+    </div>
+    <select class="sortsel" id="sort">
+      <option value="rec">추천순</option>
+      <option value="low">낮은 가격순</option>
+      <option value="high">높은 가격순</option>
+    </select>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</div>
+
+<button class="cartbtn" id="cartbtn">장바구니 <i id="badge">0</i></button>
+
+<div class="drawer" id="drawer">
+  <div class="drawer-back" data-close></div>
+  <div class="drawer-panel">
+    <div class="drawer-h"><b>장바구니</b><button data-close aria-label="닫기">✕</button></div>
+    <div class="drawer-list" id="list"></div>
+    <div class="drawer-f">
+      <div class="row"><span>상품 금액</span><span id="sum">0원</span></div>
+      <div class="row"><span>배송비</span><span id="ship">0원</span></div>
+      <div class="row total"><span>결제 예정</span><span id="total">0원</span></div>
+      <button class="pay" id="pay" disabled>주문하기</button>
+      <p class="paid" id="paid"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+const G = ["linear-gradient(135deg,#ffd9a0,#ff9d6c)","linear-gradient(135deg,#ffe9b0,#ffb84c)",
+"linear-gradient(135deg,#d6f5e3,#7fd8a8)","linear-gradient(135deg,#c3e0ff,#7aa8ff)",
+"linear-gradient(135deg,#ffd6e7,#ff9ec4)","linear-gradient(135deg,#e3dcff,#a894ff)",
+"linear-gradient(135deg,#fff0b8,#ffd24c)","linear-gradient(135deg,#ffe0cc,#ffab7a)"];
+
+const P = [
+ {id:1,cat:"pre",n:"노지 감귤 5kg",d:"서귀포 남원읍 · 당도 12brix 이상",price:24900,was:29900,ship:"11월 18일 순차 출고",opts:["S","M","L"]},
+ {id:2,cat:"pre",n:"한라봉 3kg",d:"수확 직후 발송 · 선물용 박스",price:32000,was:38000,ship:"12월 5일 순차 출고",opts:["일반","선물"]},
+ {id:3,cat:"now",n:"감귤 착즙주스 12병",d:"착즙 후 급속 냉동 · 무가당",price:19800,was:null,ship:"오늘 출고",opts:["12병","24병"]},
+ {id:4,cat:"now",n:"감귤 말랭이 200g",d:"저온 건조 · 설탕 무첨가",price:12000,was:15000,ship:"오늘 출고",opts:["1봉","3봉"]},
+ {id:5,cat:"sub",n:"감귤 정기구독 3개월",d:"매달 제철 감귤 3kg 자동 배송",price:69000,was:null,ship:"매월 첫째 주 배송",opts:["3kg","5kg"]},
+ {id:6,cat:"now",n:"천혜향 2kg",d:"향이 강한 만감류 · 껍질 얇음",price:28000,was:null,ship:"오늘 출고",opts:["일반","선물"]},
+ {id:7,cat:"pre",n:"레드향 3kg",d:"당도 높은 겨울 만감류",price:35000,was:41000,ship:"12월 20일 순차 출고",opts:["일반","선물"]},
+ {id:8,cat:"now",n:"감귤 청 500ml",d:"수제 · 유리병 포장",price:14500,was:null,ship:"오늘 출고",opts:["1병","2병"]},
+];
+
+const won = n => n.toLocaleString("ko-KR") + "원";
+const grid = document.getElementById("grid");
+let filter = "all", sort = "rec";
+const picked = {};   // 상품별 선택 옵션
+const cart = [];
+
+function render() {
+  let list = P.filter(p => filter === "all" || p.cat === filter);
+  if (sort === "low") list = [...list].sort((a,b)=>a.price-b.price);
+  if (sort === "high") list = [...list].sort((a,b)=>b.price-a.price);
+
+  grid.innerHTML = list.map(p => `
+    <article class="card">
+      <div class="ph" style="background:${G[(p.id-1)%G.length]}">
+        ${p.cat==="pre"?'<span class="flag pre">예약판매</span>':p.cat==="sub"?'<span class="flag">정기구독</span>':'<span class="flag">바로배송</span>'}
+      </div>
+      <div class="cbody">
+        <div class="cname">${p.n}</div>
+        <div class="cdesc">${p.d}</div>
+        <div class="cship">🚚 ${p.ship}</div>
+        <div class="cprice">${p.was?`<s>${won(p.was)}</s>`:""}${won(p.price)}</div>
+        <div class="opts" data-opts="${p.id}">
+          ${p.opts.map((o,i)=>`<button class="opt${(picked[p.id]??0)===i?" on":""}" data-opt="${i}">${o}</button>`).join("")}
+        </div>
+        <button class="add" data-add="${p.id}">장바구니 담기</button>
+      </div>
+    </article>`).join("");
+}
+
+grid.addEventListener("click", e => {
+  const o = e.target.closest("[data-opt]");
+  if (o) {
+    const id = +o.parentElement.dataset.opts;
+    picked[id] = +o.dataset.opt;
+    render();
+    return;
+  }
+  const a = e.target.closest("[data-add]");
+  if (a) {
+    const p = P.find(x => x.id === +a.dataset.add);
+    const opt = p.opts[picked[p.id] ?? 0];
+    const hit = cart.find(c => c.id === p.id && c.opt === opt);
+    if (hit) hit.q += 1; else cart.push({ id: p.id, n: p.n, opt, price: p.price, q: 1, cat: p.cat, g: G[(p.id-1)%G.length] });
+    a.textContent = "담겼습니다 ✓"; a.classList.add("ok");
+    setTimeout(() => { a.textContent = "장바구니 담기"; a.classList.remove("ok"); }, 900);
+    sync();
+  }
+});
+
+document.querySelectorAll(".cat").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".cat").forEach(x => x.classList.remove("on"));
+  b.classList.add("on"); filter = b.dataset.cat; render();
+}));
+document.getElementById("sort").addEventListener("change", e => { sort = e.target.value; render(); });
+
+/* 장바구니 */
+const drawer = document.getElementById("drawer");
+document.getElementById("cartbtn").addEventListener("click", () => drawer.classList.add("open"));
+drawer.addEventListener("click", e => { if (e.target.closest("[data-close]")) drawer.classList.remove("open"); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") drawer.classList.remove("open"); });
+
+function sync() {
+  const badge = document.getElementById("badge");
+  const list = document.getElementById("list");
+  const count = cart.reduce((s,c)=>s+c.q,0);
+  badge.textContent = count;
+
+  if (!cart.length) {
+    list.innerHTML = `<p class="empty">담긴 상품이 없습니다.<br>마음에 드는 감귤을 담아보세요.</p>`;
+  } else {
+    list.innerHTML = cart.map((c,i) => `
+      <div class="li">
+        <div class="li-ph" style="background:${c.g}"></div>
+        <div>
+          <b>${c.n}</b>
+          <small>${c.opt}${c.cat==="pre"?" · 예약배송":""}</small>
+          <div class="qty">
+            <button data-q="-1" data-i="${i}">−</button><span>${c.q}</span><button data-q="1" data-i="${i}">+</button>
+          </div>
+        </div>
+        <div class="li-p">${won(c.price*c.q)}<a class="li-del" data-del="${i}">삭제</a></div>
+      </div>`).join("");
+  }
+
+  const sum = cart.reduce((s,c)=>s+c.price*c.q,0);
+  const ship = sum === 0 ? 0 : (sum >= 50000 ? 0 : 3500);
+  const hasPre = cart.some(c => c.cat === "pre");
+  document.getElementById("sum").textContent = won(sum);
+  document.getElementById("ship").textContent = sum === 0 ? "-" : (ship === 0 ? "무료 (5만원 이상)" : won(ship)) + (hasPre ? " · 배송 분리" : "");
+  document.getElementById("total").textContent = won(sum + ship);
+  document.getElementById("pay").disabled = !cart.length;
+}
+
+document.getElementById("list").addEventListener("click", e => {
+  const q = e.target.closest("[data-q]");
+  if (q) { const i = +q.dataset.i; cart[i].q += +q.dataset.q; if (cart[i].q < 1) cart.splice(i,1); sync(); return; }
+  const d = e.target.closest("[data-del]");
+  if (d) { cart.splice(+d.dataset.del,1); sync(); }
+});
+
+document.getElementById("pay").addEventListener("click", () => {
+  document.getElementById("paid").textContent = "데모입니다. 실제 서비스에서는 여기서 PG 결제창이 열립니다.";
+  setTimeout(()=>{ document.getElementById("paid").textContent = ""; }, 4000);
+});
+
+render(); sync();
+</script>
+</body>
+</html>

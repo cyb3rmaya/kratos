@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>만드는 기록 — 블로그 플랫폼 데모 | 크라토스</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="../demo.css">
+<style>
+body.dark { background:#0f1116; color:#e9ebf2; }
+body.dark .dnav, body.dark .post, body.dark .side-box { border-color:#22262f; }
+body.dark .tag { border-color:#2a2f3a; color:#9aa3b5; }
+body.dark .tag.on { background:#e9ebf2; color:#0f1116; border-color:#e9ebf2; }
+body.dark .p-desc, body.dark .p-meta, body.dark .side-box p { color:#8b93a7; }
+body.dark .search input { background:#161a22; border-color:#22262f; color:#e9ebf2; }
+body.dark .side-box { background:#141821; }
+body.dark .article { border-color:#22262f; }
+body.dark .toc a { color:#8b93a7; }
+
+.head { padding:44px 0 30px; }
+.head h1 { font-size:clamp(28px,4.4vw,42px); font-weight:800; letter-spacing:-0.04em; }
+.head p { color:var(--muted); margin-top:10px; font-size:15px; }
+.head .toggle { float:right; font-size:13px; border:1px solid var(--line); padding:8px 14px; border-radius:6px; color:var(--muted); }
+
+.layout { display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:48px; padding-bottom:70px; }
+.search { margin-bottom:18px; }
+.search input { width:100%; border:1px solid var(--line); border-radius:8px; padding:12px 14px; font:inherit; font-size:14.5px; }
+.search input:focus { outline:none; border-color:var(--k-cobalt); }
+.tags { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:8px; }
+.tag { font-size:13px; padding:7px 14px; border-radius:20px; border:1px solid var(--line); color:var(--muted); transition:.16s; }
+.tag.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+
+.post { display:flex; gap:18px; padding:22px 0; border-bottom:1px solid var(--line); width:100%; text-align:left; }
+.post:hover .p-title { color:var(--k-cobalt); }
+.p-thumb { width:120px; height:82px; border-radius:9px; flex:none; }
+.p-title { font-size:17.5px; font-weight:700; letter-spacing:-0.025em; transition:.16s; }
+.p-desc { font-size:14px; color:var(--muted); margin-top:6px; }
+.p-meta { font-family:var(--mono); font-size:11.5px; color:var(--dim); margin-top:9px; }
+.p-meta em { font-style:normal; color:var(--k-cobalt); }
+.none { padding:50px 0; text-align:center; color:var(--dim); font-size:14px; }
+
+.side-box { border:1px solid var(--line); border-radius:12px; padding:20px; background:var(--soft); }
+.side-box b { font-size:14.5px; font-weight:800; }
+.side-box p { font-size:13px; color:var(--muted); margin-top:7px; }
+.side-box input { width:100%; margin-top:12px; border:1px solid var(--line); border-radius:7px; padding:10px 12px; font:inherit; font-size:13.5px; }
+.side-box button { width:100%; margin-top:8px; height:40px; border-radius:7px; background:var(--k-cobalt); color:#fff; font-weight:700; font-size:13.5px; }
+.side-msg { font-size:12px; color:var(--k-cobalt); margin-top:8px; min-height:17px; }
+.pop { margin-top:22px; }
+.pop-t { font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--dim); }
+.pop a { display:block; font-size:13.5px; font-weight:600; padding:9px 0; border-bottom:1px solid var(--line); }
+
+/* 글 상세 */
+.article { display:none; padding:34px 0 70px; }
+.article.on { display:block; }
+.back { font-size:13.5px; color:var(--muted); }
+.a-tag { display:inline-block; font-size:12px; color:var(--k-cobalt); font-weight:700; margin-top:18px; }
+.article h2 { font-size:clamp(24px,3.6vw,36px); font-weight:800; letter-spacing:-0.04em; margin-top:8px; line-height:1.25; }
+.a-meta { font-family:var(--mono); font-size:12px; color:var(--dim); margin-top:12px; }
+.a-cover { height:200px; border-radius:12px; margin:24px 0 8px; }
+.a-layout { display:grid; grid-template-columns:minmax(0,1fr) 200px; gap:44px; }
+.a-body p { font-size:16px; line-height:1.9; margin-top:18px; color:#2c3240; }
+body.dark .a-body p { color:#c3c9d6; }
+.a-body h3 { font-size:20px; font-weight:800; letter-spacing:-0.03em; margin-top:34px; }
+.toc { position:sticky; top:64px; font-size:13px; }
+.toc-t { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; color:var(--dim); margin-bottom:10px; }
+.toc a { display:block; padding:5px 0; color:var(--muted); }
+.toc a:hover { color:var(--k-cobalt); }
+
+@media (max-width:900px){ .layout,.a-layout{grid-template-columns:minmax(0,1fr);} .toc{display:none;} }
+@media (max-width:560px){ .p-thumb{width:84px;height:62px;} }
+</style>
+</head>
+<body>
+
+<div class="kbar">
+  <span class="kbar-mark"></span><b>KRATOS</b>
+  <span class="kbar-tag">LIVE DEMO</span>
+  <span class="kbar-note">블로그 플랫폼 데모 — 검색·태그·구독·다크모드가 동작합니다</span>
+  <a class="kbar-back" href="../../index.html">← 크라토스로 돌아가기</a>
+</div>
+
+<div class="dwrap">
+  <nav class="dnav">
+    <span class="dlogo">만드는 기록</span>
+    <div class="dmenu"><a href="#">글</a><a href="#">시리즈</a><a href="#">소개</a><a href="#">구독</a></div>
+  </nav>
+
+  <!-- 목록 -->
+  <div id="listView">
+    <header class="head">
+      <button class="toggle" id="dm">🌙 다크모드</button>
+      <h1>만드는 기록</h1>
+      <p>웹을 만들면서 부딪힌 것들을 남깁니다. 주 1회 발행.</p>
+    </header>
+
+    <div class="layout">
+      <div>
+        <div class="search"><input id="q" type="search" placeholder="제목이나 내용으로 검색 (예: 검색, 계약, 성능)"></div>
+        <div class="tags" id="tags"></div>
+        <div id="posts"></div>
+      </div>
+
+      <aside>
+        <div class="side-box">
+          <b>새 글이 올라오면 알려드릴까요?</b>
+          <p>광고 없이 글만 보냅니다. 언제든 해지할 수 있습니다.</p>
+          <input id="mail" type="email" placeholder="이메일 주소">
+          <button id="sub">구독하기</button>
+          <p class="side-msg" id="submsg"></p>
+        </div>
+        <div class="pop">
+          <div class="pop-t">MOST READ</div>
+          <div id="pop"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- 상세 -->
+  <article class="article" id="articleView">
+    <button class="back" id="back">← 목록으로</button>
+    <div id="art"></div>
+  </article>
+</div>
+
+<script>
+const G = ["linear-gradient(135deg,#ffd6e7,#ff9ec4)","linear-gradient(135deg,#c3e0ff,#7aa8ff)",
+"linear-gradient(135deg,#fff0b8,#ffd24c)","linear-gradient(135deg,#d6f5e3,#7fd8a8)",
+"linear-gradient(135deg,#e3dcff,#a894ff)","linear-gradient(135deg,#ffd9a0,#ff9d6c)"];
+
+const POSTS = [
+{id:1,tag:"회고",t:"쇼핑몰 이탈률을 40% 줄인 장바구니 개편기",d:"결제까지 세 걸음을 줄였습니다",date:"2025.06.14",read:"8분",views:"4.2k",
+ body:[["문제는 버튼이 아니었다","장바구니에서 결제까지 이탈이 유독 높았습니다. 처음엔 버튼 색과 문구를 바꿔봤지만 숫자는 거의 움직이지 않았습니다. 세션 기록을 200개쯤 돌려보고 나서야 진짜 원인을 찾았습니다. 사람들은 버튼을 못 찾은 게 아니라, 배송비가 언제 붙는지 몰라서 멈춰 있었습니다."],
+ ["금액을 마지막에 보여주지 않기","장바구니 화면에서 이미 최종 결제 금액이 보이도록 바꿨습니다. 배송비 무료 조건까지 남은 금액을 함께 안내하니, 이탈이 줄었을 뿐 아니라 객단가도 올라갔습니다."],
+ ["세 걸음을 없앤 방법","비회원 주문을 기본값으로 두고, 주소는 우편번호 검색 한 번으로 채워지게 했습니다. 결과적으로 클릭 수가 11번에서 6번으로 줄었고 이탈률은 40% 낮아졌습니다."]]},
+{id:2,tag:"개발",t:"한국어 검색은 왜 형태소 분석이 필요한가",d:"'연차'로 '휴가 정책'을 찾게 만들기",date:"2025.05.28",read:"12분",views:"6.8k",
+ body:[["띄어쓰기만 믿으면 안 되는 이유","영어는 공백으로 단어가 갈리지만 한국어는 조사가 붙습니다. '연차를', '연차가', '연차는'이 전부 다른 토큰이 되면 검색이 안 됩니다."],
+ ["형태소 분석기 붙이기","Nori 같은 분석기를 붙이면 조사를 떼어내고 어간만 남깁니다. 여기에 동의어 사전을 더해 '연차'와 '휴가'를 같은 것으로 묶었습니다."],
+ ["실제로 튜닝한 순서","먼저 검색 로그에서 결과가 0건이었던 질의어를 모았습니다. 그 목록이 곧 동의어 사전의 초안이 됩니다. 추측으로 사전을 만들지 않는 게 핵심입니다."]]},
+{id:3,tag:"일",t:"1인 개발자의 유지보수 계약서 쓰는 법",d:"범위를 문장으로 못 박아 두기",date:"2025.05.02",read:"6분",views:"9.1k",
+ body:[["'간단한 수정'이라는 말","계약서에 '간단한 수정은 무상'이라고 쓰면 반드시 분쟁이 생깁니다. 간단하다는 기준이 서로 다르기 때문입니다."],
+ ["시간 단위로 정의하기","저는 '1건당 작업 시간 1시간 이내, 월 4건까지'처럼 숫자로 씁니다. 초과분은 시간당 단가로 청구한다고 미리 적어둡니다."],
+ ["오히려 신뢰가 올라간다","숫자가 명확하면 고객도 안심합니다. 애매하게 넘어간 계약이 결국 관계를 망칩니다."]]},
+{id:4,tag:"개발",t:"캔버스 게임에서 60fps를 지키는 방법",d:"고정 타임스텝과 오브젝트 풀",date:"2025.04.19",read:"10분",views:"3.4k",
+ body:[["기기마다 속도가 다른 문제","requestAnimationFrame을 그대로 쓰면 120Hz 기기에서 게임이 두 배 빨라집니다. 물리 계산은 고정 타임스텝으로 분리해야 합니다."],
+ ["가비지 컬렉션 끊김 없애기","매 프레임 객체를 새로 만들면 GC가 돌면서 화면이 튑니다. 미리 만들어둔 객체를 재사용하는 풀 방식으로 바꿨습니다."],
+ ["저사양에서 먼저 테스트하기","최신 기기에서 잘 돌아가는 건 의미가 없습니다. 오래된 보급형 안드로이드를 기준으로 잡으면 나머지는 따라옵니다."]]},
+{id:5,tag:"회고",t:"관리자 화면을 예쁘게 만들면 안 되는 이유",d:"매일 쓰는 사람에게 필요한 것",date:"2025.03.30",read:"7분",views:"2.7k",
+ body:[["사장님은 하루에 40번 들어온다","고객 화면은 한 번 보고 떠나지만 관리자는 매일 반복해서 씁니다. 예쁨보다 클릭 수가 중요합니다."],
+ ["가장 많이 하는 일을 첫 화면에","주문 확인이 90%라면 로그인 직후 주문 목록이 떠야 합니다. 대시보드 그래프는 그 다음입니다."],
+ ["영상으로 남기기","사용법을 문서로 주면 아무도 안 읽습니다. 5분짜리 화면 녹화가 훨씬 잘 먹힙니다."]]},
+{id:6,tag:"일",t:"견적서에서 항목을 빼면 생기는 일",d:"안 팔았더니 더 팔렸다",date:"2025.02.21",read:"5분",views:"5.5k",
+ body:[["필요 없는 걸 먼저 뺀다","첫 상담에서 요청받은 기능의 30%는 실제로 필요 없는 경우가 많습니다. 그걸 먼저 지적하면 신뢰가 생깁니다."],
+ ["단기 매출은 줄어든다","견적 금액은 당연히 낮아집니다. 대신 프로젝트가 끝난 뒤 추가 발주와 소개가 따라옵니다."],
+ ["숫자로 확인한 결과","재의뢰 비율이 눈에 띄게 올랐습니다. 처음부터 다 팔았다면 없었을 매출입니다."]]},
+];
+
+const $ = s => document.querySelector(s);
+let tag = "전체", q = "";
+const TAGS = ["전체","개발","회고","일"];
+
+$("#tags").innerHTML = TAGS.map((t,i)=>`<button class="tag${i===0?" on":""}" data-t="${t}">${t}</button>`).join("");
+$("#pop").innerHTML = [...POSTS].sort((a,b)=>parseFloat(b.views)-parseFloat(a.views)).slice(0,4)
+  .map(p=>`<a href="#" data-open="${p.id}">${p.t}</a>`).join("");
+
+function list() {
+  const arr = POSTS.filter(p => (tag==="전체"||p.tag===tag) &&
+    (!q || (p.t+p.d+p.body.map(b=>b.join("")).join("")).toLowerCase().includes(q.toLowerCase())));
+  $("#posts").innerHTML = arr.length ? arr.map(p=>`
+    <button class="post" data-open="${p.id}">
+      <div class="p-thumb" style="background:${G[(p.id-1)%G.length]}"></div>
+      <div>
+        <div class="p-title">${p.t}</div>
+        <div class="p-desc">${p.d}</div>
+        <div class="p-meta"><em>${p.tag}</em> · ${p.date} · ${p.read} · 조회 ${p.views}</div>
+      </div>
+    </button>`).join("")
+    : `<p class="none">'${q}'에 해당하는 글이 없습니다.<br>다른 단어로 찾아보세요.</p>`;
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-t]");
+  if (t) { document.querySelectorAll(".tag").forEach(x=>x.classList.remove("on")); t.classList.add("on"); tag=t.dataset.t; list(); return; }
+  const o = e.target.closest("[data-open]");
+  if (o) { e.preventDefault(); open(+o.dataset.open); }
+});
+$("#q").addEventListener("input", e => { q = e.target.value.trim(); list(); });
+
+function open(id) {
+  const p = POSTS.find(x=>x.id===id);
+  $("#art").innerHTML = `
+    <span class="a-tag">${p.tag}</span>
+    <h2>${p.t}</h2>
+    <div class="a-meta">${p.date} · ${p.read} · 조회 ${p.views}</div>
+    <div class="a-cover" style="background:${G[(p.id-1)%G.length]}"></div>
+    <div class="a-layout">
+      <div class="a-body">
+        <p>${p.d}. 아래는 실제로 겪은 과정을 정리한 내용입니다.</p>
+        ${p.body.map((b,i)=>`<h3 id="h${i}">${b[0]}</h3><p>${b[1]}</p>`).join("")}
+      </div>
+      <nav class="toc">
+        <div class="toc-t">목차</div>
+        ${p.body.map((b,i)=>`<a href="#h${i}">${b[0]}</a>`).join("")}
+      </nav>
+    </div>`;
+  $("#listView").style.display = "none";
+  $("#articleView").classList.add("on");
+  window.scrollTo(0,0);
+}
+$("#back").addEventListener("click", () => {
+  $("#articleView").classList.remove("on");
+  $("#listView").style.display = "";
+  window.scrollTo(0,0);
+});
+
+$("#dm").addEventListener("click", () => {
+  const on = document.body.classList.toggle("dark");
+  $("#dm").textContent = on ? "☀️ 라이트모드" : "🌙 다크모드";
+});
+
+$("#sub").addEventListener("click", () => {
+  const v = $("#mail").value.trim();
+  $("#submsg").textContent = /\S+@\S+\.\S+/.test(v)
+    ? "구독 신청이 접수되었습니다. (데모라 메일은 발송되지 않습니다)"
+    : "이메일 형식을 확인해 주세요.";
+});
+
+list();
+</script>
+</body>
+</html>

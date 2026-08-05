@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>업무 자동화 콘솔 — 크라토스 데모</title>
+<meta name="description" content="오픈마켓 주문 수집부터 송장 등록까지. 실제로 동작하는 업무 자동화 프로그램 데모.">
+<link rel="stylesheet" href="../demo.css">
+<style>
+/* ---------- 레이아웃 ---------- */
+.mhead { padding: 28px 0 22px; }
+.mkicker { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; color: #12b48c; font-weight: 700; }
+.mtitle { font-size: clamp(22px, 3.4vw, 30px); font-weight: 800; letter-spacing: -.03em; margin-top: 6px; }
+.mlead { color: var(--muted); font-size: 14px; margin-top: 8px; max-width: 62ch; }
+
+.mgrid { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 20px; padding-bottom: 60px; align-items: start; }
+
+/* ---------- 왼쪽: 작업 목록 ---------- */
+.mpanel { border: 1px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden; }
+.mpanel-h { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+.mpanel-h b { font-size: 13px; font-weight: 700; letter-spacing: -.02em; }
+.mpanel-h span { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--dim); }
+
+.job { width: 100%; text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--line); display: block; transition: background .15s; }
+.job:last-child { border-bottom: 0; }
+.job:hover { background: var(--soft); }
+.job.on { background: rgba(18, 180, 140, .07); box-shadow: inset 2px 0 0 #12b48c; }
+.job-t { display: flex; align-items: center; gap: 8px; }
+.job-t b { font-size: 13.5px; font-weight: 700; letter-spacing: -.02em; }
+.job-st { margin-left: auto; font-family: var(--mono); font-size: 9px; letter-spacing: .08em; padding: 3px 7px; border-radius: 3px; }
+.job-st.ready { background: #eef0f5; color: #6b7385; }
+.job-st.live { background: rgba(18,180,140,.12); color: #0f9c79; }
+.job-st.fail { background: rgba(239,68,68,.12); color: #dc2626; }
+.job-d { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.55; }
+.job-m { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 7px; }
+
+.msched { padding: 14px 16px; }
+.msched p { font-size: 11.5px; color: var(--muted); margin-bottom: 9px; }
+.mchips { display: flex; gap: 6px; flex-wrap: wrap; }
+.mchip { font-family: var(--mono); font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; color: var(--muted); transition: .15s; }
+.mchip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.mchip:hover { border-color: #b9c0cf; }
+
+/* ---------- 오른쪽: 콘솔 ---------- */
+.mconsole { border-radius: 12px; overflow: hidden; background: #0b0d13; border: 1px solid #1e2331; }
+.mcon-h { padding: 15px 18px; border-bottom: 1px solid #1a1f2b; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mcon-dot { width: 8px; height: 8px; border-radius: 50%; background: #3f4658; flex: none; }
+.mcon-dot.live { background: #22d3a6; animation: mpulse 1.6s ease-in-out infinite; }
+.mcon-dot.fail { background: #ef4444; }
+.mcon-name { font-size: 14px; font-weight: 700; color: #edeff5; letter-spacing: -.02em; }
+.mcon-badge { margin-left: auto; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; padding: 4px 9px; border-radius: 4px; border: 1px solid rgba(255,255,255,.14); color: #5f6779; }
+.mcon-badge.live { color: #22d3a6; border-color: rgba(34,211,166,.35); }
+.mcon-badge.done { color: #22d3a6; border-color: rgba(34,211,166,.35); }
+.mcon-badge.fail { color: #ef4444; border-color: rgba(239,68,68,.35); }
+
+.mbar-wrap { padding: 16px 18px 0; }
+.mbar { height: 6px; border-radius: 3px; background: #1a1f2b; overflow: hidden; }
+.mbar i { display: block; height: 100%; width: 0; background: #22d3a6; border-radius: 3px; transition: width .3s linear; }
+.mbar i.fail { background: #ef4444; }
+.mbar-meta { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: #3f4658; margin-top: 7px; }
+
+.mlog { padding: 12px 18px 18px; height: 300px; overflow-y: auto; font-family: var(--mono); font-size: 11.5px; line-height: 1.7; }
+.mlog::-webkit-scrollbar { width: 6px; }
+.mlog::-webkit-scrollbar-thumb { background: #1e2331; border-radius: 3px; }
+.mline { display: grid; grid-template-columns: 62px 12px minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 3px 0; animation: mIn .26s ease both; }
+.mline-t { color: #333a4a; }
+.mline-s { width: 6px; height: 6px; border-radius: 50%; align-self: center; }
+.mline-m { color: #8b93a7; word-break: break-all; }
+.mline.cur .mline-m { color: #edeff5; }
+.mline-d { color: #333a4a; font-size: 10.5px; }
+.mline-sub { grid-column: 3 / -1; color: #5f6779; font-size: 10.5px; padding: 2px 0 4px; }
+.mempty { color: #3f4658; text-align: center; padding: 110px 0; font-size: 11.5px; }
+
+.mact { padding: 14px 18px; border-top: 1px solid #1a1f2b; display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+.mbtn { border-radius: 6px; padding: 9px 18px; font-size: 13px; font-weight: 700; letter-spacing: -.01em; transition: .15s; }
+.mbtn-go { background: #22d3a6; color: #06231c; }
+.mbtn-go:hover { background: #3ee0b8; }
+.mbtn-go:disabled { background: #1e2331; color: #3f4658; cursor: not-allowed; }
+.mbtn-gh { border: 1px solid rgba(255,255,255,.16); color: #8b93a7; background: transparent; }
+.mbtn-gh:hover { color: #edeff5; border-color: rgba(255,255,255,.4); }
+.mact-note { margin-left: auto; font-family: var(--mono); font-size: 10px; color: #3f4658; }
+
+/* ---------- 결과 카드 ---------- */
+.mres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.mres-c { border: 1px solid var(--line); border-radius: 10px; padding: 15px 16px; background: #fff; }
+.mres-c dt { font-size: 11px; color: var(--muted); }
+.mres-c dd { margin: 6px 0 0; font-size: 21px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.mres-c dd small { font-size: 12px; font-weight: 600; color: var(--muted); margin-left: 2px; }
+.mres-c.good dd { color: #0f9c79; }
+.mres-c.bad dd { color: #dc2626; }
+
+/* ---------- 실행 이력 ---------- */
+.mhist { margin-top: 16px; }
+.mtable { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.mtable th { text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--dim); font-weight: 400; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.mtable td { padding: 11px 16px; border-bottom: 1px solid var(--line); color: var(--muted); font-variant-numeric: tabular-nums; }
+.mtable tr:last-child td { border-bottom: 0; }
+.mtable td b { color: var(--ink); font-weight: 600; }
+.mpill { font-family: var(--mono); font-size: 9.5px; letter-spacing: .06em; padding: 3px 8px; border-radius: 3px; }
+.mpill.ok { background: rgba(18,180,140,.12); color: #0f9c79; }
+.mpill.fail { background: rgba(239,68,68,.12); color: #dc2626; }
+.mscroll { overflow-x: auto; }
+
+.mfoot { border-top: 1px solid var(--line); padding: 20px 0 60px; margin-top: 30px; font-size: 12.5px; color: var(--muted); line-height: 1.8; }
+.mfoot b { color: var(--ink); }
+
+@keyframes mpulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+@keyframes mIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 900px) {
+  .mgrid { grid-template-columns: minmax(0, 1fr); }
+  .mres { grid-template-columns: minmax(0, 1fr); }
+  .mlog { height: 240px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mline, .mcon-dot.live { animation: none !important; }
+  .mbar i { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="kbar">
+  <span class="kbar-mark"></span>
+  <b>KRATOS</b>
+  <span class="kbar-tag">DEMO</span>
+  <span class="kbar-note">업무 자동화 프로그램 — 실제로 실행됩니다</span>
+  <a class="kbar-back" href="../../index.html">← 포트폴리오로</a>
+</div>
+
+<div class="dwrap">
+  <nav class="dnav">
+    <div class="dlogo">주문 자동화 콘솔</div>
+    <div class="dmenu"><a href="#">실행</a><a href="#">이력</a><a href="#">스케줄</a><a href="#">설정</a></div>
+  </nav>
+
+  <header class="mhead">
+    <div class="mkicker">AUTOMATION CONSOLE</div>
+    <h1 class="mtitle">사람이 3시간 하던 일을 8분에</h1>
+    <p class="mlead">
+      왼쪽에서 작업을 고르고 <b>실행</b>을 누르면 실제 프로그램과 같은 순서로 진행됩니다.
+      마지막 작업은 <b>일부러 실패하도록</b> 만들어 두었습니다. 자동화는 잘 돌 때보다 멈췄을 때가 중요합니다.
+    </p>
+  </header>
+
+  <div class="mgrid">
+
+    <!-- 왼쪽 -->
+    <div>
+      <div class="mpanel">
+        <div class="mpanel-h"><b>등록된 작업</b><span id="jobCount">4개</span></div>
+        <div id="jobList"></div>
+      </div>
+
+      <div class="mpanel" style="margin-top:16px">
+        <div class="mpanel-h"><b>실행 스케줄</b></div>
+        <div class="msched">
+          <p>선택한 시간에 컴퓨터가 켜져 있으면 자동으로 실행됩니다.</p>
+          <div class="mchips" id="schedChips"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 오른쪽 -->
+    <div>
+      <div class="mconsole">
+        <div class="mcon-h">
+          <span class="mcon-dot" id="conDot"></span>
+          <span class="mcon-name" id="conName">작업을 선택하세요</span>
+          <span class="mcon-badge" id="conBadge">IDLE</span>
+        </div>
+        <div class="mbar-wrap">
+          <div class="mbar"><i id="conBar"></i></div>
+          <div class="mbar-meta"><span id="conStep">대기 중</span><span id="conPct">0%</span></div>
+        </div>
+        <div class="mlog" id="conLog"><div class="mempty">왼쪽에서 작업을 선택하고 실행을 눌러보세요.</div></div>
+        <div class="mact">
+          <button class="mbtn mbtn-go" id="btnRun" disabled>실행</button>
+          <button class="mbtn mbtn-gh" id="btnStop">중단</button>
+          <span class="mact-note" id="conNote">RUN #4,182</span>
+        </div>
+      </div>
+
+      <dl class="mres">
+        <div class="mres-c"><dt>처리 건수</dt><dd id="resCount">—</dd></div>
+        <div class="mres-c"><dt>소요 시간</dt><dd id="resTime">—</dd></div>
+        <div class="mres-c good"><dt>절감된 수작업</dt><dd id="resSave">—</dd></div>
+      </dl>
+
+      <div class="mpanel mhist">
+        <div class="mpanel-h"><b>최근 실행 이력</b><span>최근 6건</span></div>
+        <div class="mscroll">
+          <table class="mtable">
+            <thead><tr><th>시각</th><th>작업</th><th>처리</th><th>소요</th><th>결과</th></tr></thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="mfoot">
+    이 화면은 <b>크라토스</b>가 만드는 업무 자동화 프로그램의 동작 방식을 보여주는 데모입니다.
+    실제 납품 시에는 고객사 판매처·양식에 맞춰 개발하고, 윈도우 서비스로 등록해 사람이 켜지 않아도 정해진 시각에 실행됩니다.<br>
+    실패하면 즉시 중단하고 해당 지점의 화면을 캡처해 담당자에게 알림을 보냅니다. 절반만 처리된 상태로 남지 않습니다.
+  </p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (s) => document.querySelector(s);
+
+  const JOBS = [
+    {
+      id: "order",
+      name: "오픈마켓 주문 · 송장 등록",
+      desc: "스마트스토어 · 쿠팡 · 11번가 주문을 모아 택배사에 송장을 등록합니다.",
+      meta: "매일 3회 · 평균 8분 12초",
+      status: "ready",
+      count: 184,
+      save: "3시간 2분",
+      steps: [
+        { t: "스마트스토어 로그인", s: "ok", d: 700 },
+        { t: "신규 주문 84건 수집", s: "ok", d: 900, sub: "마지막 수집 이후 건만 증분 조회" },
+        { t: "쿠팡 로그인 · 주문 61건 수집", s: "ok", d: 850 },
+        { t: "11번가 로그인 · 주문 39건 수집", s: "ok", d: 800 },
+        { t: "주소 정규화 184건", s: "ok", d: 900, sub: "도로명 기준 변환 · 우편번호 7건 자동 보정" },
+        { t: "중복 주문 2건 병합", s: "warn", d: 650, sub: "동일 수취인 · 동일 상품 · 10분 이내 주문" },
+        { t: "택배사 양식으로 변환", s: "ok", d: 700 },
+        { t: "CJ대한통운 업로드 184건", s: "ok", d: 1000 },
+        { t: "운송장 번호 판매처 역등록", s: "ok", d: 850 },
+        { t: "완료 알림톡 발송", s: "ok", d: 600 },
+      ],
+    },
+    {
+      id: "stock",
+      name: "재고 동기화",
+      desc: "자사몰과 오픈마켓 4곳의 재고를 원장 기준으로 맞춥니다.",
+      meta: "10분마다 · 평균 22초",
+      status: "ready",
+      count: 412,
+      save: "1시간 40분",
+      steps: [
+        { t: "재고 원장 조회 412건", s: "ok", d: 700 },
+        { t: "채널별 현재 재고 수집", s: "ok", d: 900 },
+        { t: "차이 발생 상품 18건 검출", s: "ok", d: 750, sub: "안전 재고 버퍼 2개 적용 후 계산" },
+        { t: "5개 채널 재고 전파", s: "ok", d: 950 },
+        { t: "전파 결과 재조회 · 대조", s: "ok", d: 800, sub: "'성공 응답'과 '실제 반영'은 다르므로 다시 읽어 확인" },
+        { t: "품절 임박 3건 알림", s: "warn", d: 600 },
+      ],
+    },
+    {
+      id: "report",
+      name: "일일 매출 리포트 생성",
+      desc: "채널별 매출을 집계해 PDF로 만들어 메일로 보냅니다.",
+      meta: "매일 08:00 · 평균 41초",
+      status: "ready",
+      count: 1,
+      save: "45분",
+      steps: [
+        { t: "채널별 매출 데이터 수집", s: "ok", d: 800 },
+        { t: "환불 · 취소 건 차감", s: "ok", d: 700 },
+        { t: "전일 · 전주 대비 계산", s: "ok", d: 650 },
+        { t: "PDF 리포트 생성", s: "ok", d: 900 },
+        { t: "담당자 4명에게 메일 발송", s: "ok", d: 700 },
+      ],
+    },
+    {
+      id: "price",
+      name: "경쟁사 가격 모니터링",
+      desc: "공개된 판매가를 수집해 변동이 크면 알립니다. (실패 시나리오)",
+      meta: "매시 정각 · 마지막 실행 실패",
+      status: "fail",
+      count: 0,
+      save: "—",
+      steps: [
+        { t: "대상 상품 목록 로드 62건", s: "ok", d: 700 },
+        { t: "수집 요청 간격 설정 (2초)", s: "ok", d: 600, sub: "대상 사이트 정책에 맞춰 요청 속도 제한" },
+        { t: "상품 1~28번 가격 수집", s: "ok", d: 950 },
+        { t: "상품 29번 페이지 구조 변경 감지", s: "err", d: 900, sub: "예상한 가격 영역을 찾지 못함 — 사이트가 개편된 것으로 보입니다" },
+        { t: "즉시 중단 · 화면 캡처 저장", s: "err", d: 700, sub: "screenshot_2026-08-06_1400.png" },
+        { t: "담당자 알림톡 발송", s: "err", d: 650, sub: "부분 처리된 데이터는 반영하지 않고 폐기했습니다" },
+      ],
+    },
+  ];
+
+  const HISTORY = [
+    { t: "08-06 14:00", j: "경쟁사 가격 모니터링", c: "0 / 62", d: "4.1초", ok: false },
+    { t: "08-06 13:00", j: "경쟁사 가격 모니터링", c: "62 / 62", d: "2분 08초", ok: true },
+    { t: "08-06 09:00", j: "오픈마켓 주문 · 송장 등록", c: "184 / 184", d: "8분 12초", ok: true },
+    { t: "08-06 08:00", j: "일일 매출 리포트 생성", c: "1 / 1", d: "41초", ok: true },
+    { t: "08-05 18:00", j: "오픈마켓 주문 · 송장 등록", c: "97 / 97", d: "5분 44초", ok: true },
+    { t: "08-05 14:00", j: "오픈마켓 주문 · 송장 등록", c: "142 / 142", d: "7분 03초", ok: true },
+  ];
+
+  const COLOR = { ok: "#22d3a6", warn: "#ffb020", err: "#ef4444" };
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let current = null, timer = null, running = false, runNo = 4182;
+
+  /* ---------- 작업 목록 ---------- */
+  function renderJobs() {
+    $("#jobCount").textContent = JOBS.length + "개";
+    $("#jobList").innerHTML = JOBS.map((j) => `
+      <button class="job" data-job="${j.id}">
+        <span class="job-t">
+          <b>${j.name}</b>
+          <span class="job-st ${j.status}">${j.status === "fail" ? "실패" : j.status === "live" ? "실행 중" : "대기"}</span>
+        </span>
+        <span class="job-d">${j.desc}</span>
+        <span class="job-m">${j.meta}</span>
+      </button>`).join("");
+
+    document.querySelectorAll("[data-job]").forEach((b) =>
+      b.addEventListener("click", () => select(b.dataset.job))
+    );
+  }
+
+  function select(id) {
+    if (running) return;
+    current = JOBS.find((j) => j.id === id);
+    document.querySelectorAll("[data-job]").forEach((b) =>
+      b.classList.toggle("on", b.dataset.job === id)
+    );
+    $("#conName").textContent = current.name;
+    $("#conBadge").textContent = "READY";
+    $("#conBadge").className = "mcon-badge";
+    $("#conDot").className = "mcon-dot";
+    $("#conBar").style.width = "0";
+    $("#conBar").className = "";
+    $("#conPct").textContent = "0%";
+    $("#conStep").textContent = `0 / ${current.steps.length} 단계`;
+    $("#conLog").innerHTML = `<div class="mempty">실행을 누르면 시작합니다.</div>`;
+    $("#btnRun").disabled = false;
+    $("#resCount").textContent = "—";
+    $("#resTime").textContent = "—";
+    $("#resSave").textContent = "—";
+  }
+
+  /* ---------- 실행 ---------- */
+  function stamp(base, n) {
+    const d = new Date(base.getTime() + n * 6400);
+    const p = (v) => String(v).padStart(2, "0");
+    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  }
+
+  function run() {
+    if (!current || running) return;
+    running = true;
+    runNo += 1;
+    $("#btnRun").disabled = true;
+    $("#conNote").textContent = "RUN #" + runNo.toLocaleString();
+    $("#conLog").innerHTML = "";
+    $("#conBadge").textContent = "RUNNING";
+    $("#conBadge").className = "mcon-badge live";
+    $("#conDot").className = "mcon-dot live";
+    $("#conBar").className = "";
+    $("#resCount").textContent = "—";
+    $("#resTime").textContent = "—";
+    $("#resSave").textContent = "—";
+
+    const base = new Date(2026, 7, 6, 14, 0, 0);
+    const log = $("#conLog");
+    let i = 0, elapsed = 0, failed = false;
+
+    function addLine(step, n) {
+      const el = document.createElement("div");
+      el.className = "mline cur";
+      el.innerHTML = `
+        <span class="mline-t">${stamp(base, n)}</span>
+        <span class="mline-s" style="background:${COLOR[step.s]}"></span>
+        <span class="mline-m">${step.t}</span>
+        <span class="mline-d">${(step.d / 1000).toFixed(1)}s</span>
+        ${step.sub ? `<span class="mline-sub">↳ ${step.sub}</span>` : ""}`;
+      log.querySelectorAll(".mline").forEach((x) => x.classList.remove("cur"));
+      log.appendChild(el);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function done() {
+      running = false;
+      $("#btnRun").disabled = false;
+      const secs = Math.round(elapsed / 1000);
+      if (failed) {
+        $("#conBadge").textContent = "FAILED";
+        $("#conBadge").className = "mcon-badge fail";
+        $("#conDot").className = "mcon-dot fail";
+        $("#conBar").className = "fail";
+        $("#resCount").innerHTML = `0<small> / ${current.steps.length}단계 중 중단</small>`;
+        $("#resTime").textContent = secs + "초";
+        $("#resSave").parentElement.className = "mres-c bad";
+        $("#resSave").textContent = "롤백됨";
+        current.status = "fail";
+      } else {
+        $("#conBadge").textContent = "COMPLETE";
+        $("#conBadge").className = "mcon-badge done";
+        $("#conDot").className = "mcon-dot";
+        $("#resCount").innerHTML = `${current.count.toLocaleString()}<small> 건</small>`;
+        $("#resTime").textContent = secs + "초";
+        $("#resSave").parentElement.className = "mres-c good";
+        $("#resSave").textContent = current.save;
+        current.status = "ready";
+      }
+      HISTORY.unshift({
+        t: "08-06 " + stamp(base, current.steps.length),
+        j: current.name,
+        c: failed ? `0 / ${current.count || 62}` : `${current.count} / ${current.count}`,
+        d: secs + "초",
+        ok: !failed,
+      });
+      HISTORY.length = Math.min(HISTORY.length, 6);
+      renderHistory();
+      renderJobs();
+      document.querySelector(`[data-job="${current.id}"]`).classList.add("on");
+    }
+
+    function tick() {
+      if (i >= current.steps.length) { done(); return; }
+      const step = current.steps[i];
+      addLine(step, i);
+      if (step.s === "err") failed = true;
+      elapsed += step.d;
+      i += 1;
+      const p = Math.round((i / current.steps.length) * 100);
+      $("#conBar").style.width = p + "%";
+      $("#conPct").textContent = p + "%";
+      $("#conStep").textContent = `${i} / ${current.steps.length} 단계`;
+      timer = setTimeout(tick, reduce ? 20 : step.d);
+    }
+    tick();
+  }
+
+  function stop() {
+    if (!running) return;
+    clearTimeout(timer);
+    running = false;
+    $("#btnRun").disabled = false;
+    $("#conBadge").textContent = "STOPPED";
+    $("#conBadge").className = "mcon-badge fail";
+    $("#conDot").className = "mcon-dot fail";
+    const el = document.createElement("div");
+    el.className = "mline";
+    el.innerHTML = `<span class="mline-t">—</span><span class="mline-s" style="background:#ef4444"></span>
+      <span class="mline-m">사용자가 중단했습니다</span><span class="mline-d"></span>
+      <span class="mline-sub">↳ 진행 중이던 단위는 처리 전으로 되돌립니다</span>`;
+    $("#conLog").appendChild(el);
+    $("#conLog").scrollTop = $("#conLog").scrollHeight;
+  }
+
+  /* ---------- 이력 / 스케줄 ---------- */
+  function renderHistory() {
+    $("#histBody").innerHTML = HISTORY.map((h) => `
+      <tr>
+        <td>${h.t}</td>
+        <td><b>${h.j}</b></td>
+        <td>${h.c}</td>
+        <td>${h.d}</td>
+        <td><span class="mpill ${h.ok ? "ok" : "fail"}">${h.ok ? "성공" : "실패"}</span></td>
+      </tr>`).join("");
+  }
+
+  function renderSched() {
+    const times = ["09:00", "12:00", "14:00", "18:00", "22:00"];
+    const on = new Set(["09:00", "14:00", "18:00"]);
+    $("#schedChips").innerHTML = times
+      .map((t) => `<button class="mchip${on.has(t) ? " on" : ""}" data-time="${t}">${t}</button>`)
+      .join("");
+    document.querySelectorAll("[data-time]").forEach((b) =>
+      b.addEventListener("click", () => b.classList.toggle("on"))
+    );
+  }
+
+  renderJobs();
+  renderHistory();
+  renderSched();
+  select("order");
+  $("#btnRun").addEventListener("click", run);
+  $("#btnStop").addEventListener("click", stop);
+})();
+</script>
+</body>
+</html>
