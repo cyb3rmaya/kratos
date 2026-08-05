@@ -55,7 +55,7 @@ function buildCSS(inlineFonts) {
 }
 
 /* ---------- 3. 데모 5종을 iframe srcdoc 용으로 가공 ---------- */
-const DEMOS = ["shop", "blog", "booking", "game", "macro"];
+const DEMOS = ["shop", "blog", "booking", "game", "macro", "admin", "quiz", "sync"];
 
 /* 데모는 iframe 안에서 뜨므로 웹폰트 대신 시스템 폰트를 씁니다
    (본문 폰트를 데모마다 중복 내장하면 파일이 5배로 불어납니다) */
@@ -108,7 +108,8 @@ const overlayJS = `
 /* 배포본은 파일이 하나뿐이라 데모를 iframe 으로 띄웁니다 */
 (function(){
   var DEMOS = __DEMO_DATA__;
-  var NAMES = {shop:"쇼핑몰",blog:"블로그",booking:"예약",game:"웹게임",macro:"업무 자동화"};
+  var NAMES = {shop:"쇼핑몰",blog:"블로그",booking:"예약",game:"웹게임",macro:"업무 자동화",
+               admin:"배차 관제",quiz:"실시간 퀴즈쇼",sync:"재고 동기화"};
   var ov = document.createElement("div");
   ov.className = "demo-ov";
   ov.innerHTML = '<div class="demo-ov-bar"><b>KRATOS</b>'

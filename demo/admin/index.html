@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>물류 배차 관제 — 크라토스 데모</title>
+<meta name="description" content="차량 위치·배송 상태·기사 배정을 한 화면에서 관리하는 실시간 관제 웹앱 데모.">
+<link rel="stylesheet" href="../demo.css">
+<style>
+.ahead { padding: 26px 0 20px; }
+.akicker { font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em; color: #2f52d8; font-weight: 700; }
+.atitle { font-size: clamp(22px, 3.4vw, 30px); font-weight: 800; letter-spacing: -.03em; margin-top: 6px; }
+.alead { color: var(--muted); font-size: 14.5px; margin-top: 8px; max-width: 64ch; font-weight: 500; }
+
+.astat { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 16px; }
+.astat-c { border: 1px solid var(--line); border-radius: 10px; padding: 13px 15px; background: #fff; }
+.astat-c dt { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.astat-c dd { margin: 5px 0 0; font-size: 22px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.astat-c dd small { font-size: 12px; font-weight: 700; color: var(--muted); margin-left: 3px; }
+
+.agrid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,330px); gap: 16px; padding-bottom: 54px; align-items: start; }
+
+.amap { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #0b0d13; position: relative; }
+.amap canvas { width: 100%; height: 420px; display: block; }
+.amap-hud { position: absolute; top: 12px; left: 14px; display: flex; gap: 8px; align-items: center; }
+.amap-live { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; color: #22d3a6;
+  background: rgba(34,211,166,.14); border: 1px solid rgba(34,211,166,.35); padding: 4px 9px; border-radius: 4px; }
+.amap-live i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22d3a6; margin-right: 5px;
+  animation: apulse 1.6s ease-in-out infinite; }
+.amap-legend { position: absolute; bottom: 12px; left: 14px; display: flex; gap: 14px; font-size: 11px; color: #a8b0c2; font-weight: 500; }
+.amap-legend span { display: flex; align-items: center; gap: 5px; }
+.amap-legend i { width: 8px; height: 8px; border-radius: 2px; }
+.amap-fps { position: absolute; top: 12px; right: 14px; font-family: var(--mono); font-size: 10px; color: #7d8598; }
+
+.apanel { border: 1px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden; }
+.apanel + .apanel { margin-top: 14px; }
+.apanel-h { padding: 13px 15px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+.apanel-h b { font-size: 13.5px; font-weight: 700; letter-spacing: -.02em; }
+.apanel-h span { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--muted); font-weight: 500; }
+
+.aorder { padding: 15px; }
+.aorder-t { font-size: 13.5px; font-weight: 700; }
+.aorder-d { font-size: 12px; color: var(--muted); margin-top: 5px; font-weight: 500; line-height: 1.6; }
+.acand { margin-top: 12px; display: grid; gap: 8px; }
+.acandi { border: 1px solid var(--line); border-radius: 9px; padding: 11px 12px; text-align: left; width: 100%; transition: .15s; display: block; }
+.acandi:hover { border-color: #2f52d8; background: #f7f9ff; }
+.acandi.best { border-color: #2f52d8; background: #f5f8ff; }
+.acandi-t { display: flex; align-items: center; gap: 7px; }
+.acandi-t b { font-size: 13px; font-weight: 700; }
+.acandi-tag { font-family: var(--mono); font-size: 9px; letter-spacing: .06em; background: #2f52d8; color: #fff; padding: 2px 6px; border-radius: 3px; }
+.acandi-why { margin-left: auto; font-size: 11.5px; color: #2f52d8; font-weight: 700; font-variant-numeric: tabular-nums; }
+.acandi-d { font-size: 11.5px; color: var(--muted); margin-top: 5px; font-weight: 500; }
+.aempty { padding: 34px 15px; text-align: center; color: var(--muted); font-size: 12.5px; font-weight: 500; }
+
+.alist { max-height: 236px; overflow-y: auto; }
+.acar { display: grid; grid-template-columns: 10px minmax(0,1fr) auto; gap: 9px; align-items: center;
+  padding: 10px 15px; border-bottom: 1px solid var(--line); }
+.acar:last-child { border-bottom: 0; }
+.acar-dot { width: 9px; height: 9px; border-radius: 2px; }
+.acar b { font-size: 12.5px; font-weight: 700; display: block; }
+.acar span { font-size: 11px; color: var(--muted); font-weight: 500; }
+.acar-st { font-family: var(--mono); font-size: 9.5px; letter-spacing: .05em; padding: 3px 7px; border-radius: 3px; font-weight: 700; }
+.st-run { background: rgba(18,180,140,.14); color: #0b8a68; }
+.st-idle { background: #eef0f5; color: #5b6478; }
+.st-lost { background: rgba(239,68,68,.12); color: #c92a2a; }
+
+.abtn { border-radius: 7px; padding: 10px 18px; font-size: 13px; font-weight: 700; transition: .15s; }
+.abtn-go { background: #2f52d8; color: #fff; width: 100%; }
+.abtn-go:hover { background: #4162e8; }
+.aact { padding: 0 15px 15px; }
+.anote { font-size: 11.5px; color: var(--muted); margin-top: 9px; line-height: 1.6; font-weight: 500; }
+
+.afoot { border-top: 1px solid var(--line); padding: 20px 0 56px; font-size: 13px; color: var(--muted); line-height: 1.8; font-weight: 500; }
+.afoot b { color: var(--ink); font-weight: 700; }
+
+@keyframes apulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+@media (max-width: 940px) {
+  .agrid { grid-template-columns: minmax(0,1fr); }
+  .astat { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { .amap-live i { animation: none; } }
+</style>
+</head>
+<body>
+
+<div class="kbar">
+  <span class="kbar-mark"></span>
+  <b>KRATOS</b>
+  <span class="kbar-tag">DEMO</span>
+  <span class="kbar-note">실시간 배차 관제 — 차량이 실제로 움직입니다</span>
+  <a class="kbar-back" href="../../index.html">← 포트폴리오로</a>
+</div>
+
+<div class="dwrap">
+  <nav class="dnav">
+    <div class="dlogo">배차 관제</div>
+    <div class="dmenu"><a href="#">관제</a><a href="#">배차</a><a href="#">기사</a><a href="#">정산</a></div>
+  </nav>
+
+  <header class="ahead">
+    <div class="akicker">DISPATCH CONTROL</div>
+    <h1 class="atitle">전화와 엑셀로 하던 배차를 25초에</h1>
+    <p class="alead">
+      차량 위치가 실시간으로 들어옵니다. <b>새 오더 발생</b>을 누르면 거리·적재량·근무시간을 계산해
+      배차 후보를 <b>추천 이유와 함께</b> 제시합니다. 결정은 사람이 합니다.
+    </p>
+  </header>
+
+  <dl class="astat">
+    <div class="astat-c"><dt>운행 중</dt><dd id="stRun">—</dd></div>
+    <div class="astat-c"><dt>대기</dt><dd id="stIdle">—</dd></div>
+    <div class="astat-c"><dt>신호 끊김</dt><dd id="stLost">—</dd></div>
+    <div class="astat-c"><dt>오늘 배차</dt><dd id="stDone">0<small>건</small></dd></div>
+  </dl>
+
+  <div class="agrid">
+    <div class="amap">
+      <canvas id="map"></canvas>
+      <div class="amap-hud"><span class="amap-live"><i></i>LIVE</span></div>
+      <div class="amap-fps" id="fps">—</div>
+      <div class="amap-legend">
+        <span><i style="background:#22d3a6"></i>운행 중</span>
+        <span><i style="background:#7d8598"></i>대기</span>
+        <span><i style="background:#ef4444"></i>신호 끊김</span>
+        <span><i style="background:#ffb020"></i>배차 대상</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="apanel">
+        <div class="apanel-h"><b>배차 요청</b><span id="orderNo">—</span></div>
+        <div id="orderBox"><div class="aempty">아직 들어온 오더가 없습니다.</div></div>
+        <div class="aact"><button class="abtn abtn-go" id="btnNew">새 오더 발생</button>
+          <p class="anote">추천은 하되 자동 배정하지 않습니다. 현장 사정은 담당자가 더 잘 알기 때문입니다.</p>
+        </div>
+      </div>
+
+      <div class="apanel">
+        <div class="apanel-h"><b>차량 현황</b><span id="carN">—</span></div>
+        <div class="alist" id="carList"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="afoot">
+    실제 납품본은 <b>동시 800대 이상</b>을 캔버스 레이어에 직접 그려 60fps를 유지합니다.
+    기사 단말은 이동 중 자주 끊기므로, 신호가 끊기면 마지막 위치를 흐리게 표시하고 경과 시간을 함께 보여줍니다 —
+    담당자가 <b>'오래된 정보'임을 알 수 있어야</b> 잘못된 배차를 막을 수 있습니다.
+  </p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (s) => document.querySelector(s);
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const NAMES = ["강서1호","송파2호","분당3호","일산4호","인천5호","수원6호","김포7호","광명8호",
+                 "하남9호","구리10호","안양11호","부천12호"];
+  const cv = $("#map"), ctx = cv.getContext("2d");
+  let W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const cars = NAMES.map((n, i) => {
+    const lost = i === 4;
+    return {
+      id: i, name: n,
+      x: rnd(.08, .92), y: rnd(.12, .88),
+      vx: rnd(-1, 1) * .00035, vy: rnd(-1, 1) * .00035,
+      state: lost ? "lost" : (i % 3 === 0 ? "idle" : "run"),
+      load: Math.round(rnd(10, 95)),
+      hours: +rnd(1.5, 8.5).toFixed(1),
+      lostFor: lost ? 7 : 0,
+      target: false,
+    };
+  });
+
+  let orderNo = 4820, done = 0, order = null;
+
+  function resize() {
+    const r = cv.getBoundingClientRect();
+    W = r.width; H = r.height;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  /* ---------- 지도 렌더 ---------- */
+  function drawGrid() {
+    ctx.fillStyle = "#0b0d13";
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(255,255,255,.045)";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 46) { ctx.beginPath(); ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 46) { ctx.beginPath(); ctx.moveTo(0, y + .5); ctx.lineTo(W, y + .5); ctx.stroke(); }
+    // 굵은 간선도로
+    ctx.strokeStyle = "rgba(255,255,255,.10)";
+    ctx.lineWidth = 7;
+    [[0,.32],[0,.72]].forEach(([a,b]) => { ctx.beginPath(); ctx.moveTo(a*W, b*H); ctx.lineTo(W, b*H - 30); ctx.stroke(); });
+    [[.28,0],[.66,0]].forEach(([a,b]) => { ctx.beginPath(); ctx.moveTo(a*W, b*H); ctx.lineTo(a*W + 40, H); ctx.stroke(); });
+    // 물류센터
+    ctx.fillStyle = "#2f52d8";
+    ctx.fillRect(W * .46 - 7, H * .5 - 7, 14, 14);
+    ctx.fillStyle = "#a8b0c2";
+    ctx.font = "600 11px system-ui, sans-serif";
+    ctx.fillText("물류센터", W * .46 + 12, H * .5 + 4);
+  }
+
+  const COLOR = { run: "#22d3a6", idle: "#7d8598", lost: "#ef4444" };
+
+  function drawCars() {
+    for (const c of cars) {
+      const x = c.x * W, y = c.y * H;
+      const col = c.target ? "#ffb020" : COLOR[c.state];
+      if (c.state === "lost") ctx.globalAlpha = .45;
+      if (c.target) {
+        ctx.strokeStyle = "#ffb020"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(x, y, 15 + Math.sin(Date.now() / 260) * 3, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.fillStyle = col;
+      ctx.fillRect(x - 5, y - 5, 10, 10);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = c.state === "lost" ? "#6b7385" : "#a8b0c2";
+      ctx.font = "500 10px system-ui, sans-serif";
+      ctx.fillText(c.name + (c.state === "lost" ? " (" + c.lostFor + "분 전)" : ""), x + 9, y + 3.5);
+    }
+  }
+
+  let last = performance.now(), frames = 0, fpsAt = last;
+  function tick(now) {
+    if (!reduce) requestAnimationFrame(tick);
+    const dt = Math.min(now - last, 60); last = now;
+
+    for (const c of cars) {
+      if (c.state !== "run") continue;
+      c.x += c.vx * dt; c.y += c.vy * dt;
+      if (c.x < .04 || c.x > .96) c.vx *= -1;
+      if (c.y < .06 || c.y > .94) c.vy *= -1;
+      c.x = Math.min(Math.max(c.x, .04), .96);
+      c.y = Math.min(Math.max(c.y, .06), .94);
+    }
+    drawGrid(); drawCars();
+
+    frames++;
+    if (now - fpsAt > 700) {
+      $("#fps").textContent = Math.round((frames * 1000) / (now - fpsAt)) + " fps · " + cars.length + "대";
+      frames = 0; fpsAt = now;
+    }
+  }
+
+  /* ---------- 차량 목록 ---------- */
+  const LABEL = { run: "운행 중", idle: "대기", lost: "신호 끊김" };
+  function renderCars() {
+    $("#carN").textContent = cars.length + "대";
+    $("#carList").innerHTML = cars.map((c) => `
+      <div class="acar">
+        <span class="acar-dot" style="background:${c.target ? "#ffb020" : COLOR[c.state]}"></span>
+        <span><b>${c.name}</b><span>적재 ${c.load}% · 근무 ${c.hours}h</span></span>
+        <span class="acar-st st-${c.state}">${LABEL[c.state]}</span>
+      </div>`).join("");
+    $("#stRun").innerHTML = cars.filter((c) => c.state === "run").length + '<small>대</small>';
+    $("#stIdle").innerHTML = cars.filter((c) => c.state === "idle").length + '<small>대</small>';
+    $("#stLost").innerHTML = cars.filter((c) => c.state === "lost").length + '<small>대</small>';
+  }
+
+  /* ---------- 배차 ---------- */
+  const SPOTS = ["강남구 역삼동", "마포구 상암동", "성동구 성수동", "서초구 방배동", "용산구 한남동", "종로구 익선동"];
+
+  function newOrder() {
+    orderNo++;
+    const to = SPOTS[Math.floor(Math.random() * SPOTS.length)];
+    const ox = rnd(.15, .85), oy = rnd(.15, .85);
+
+    const cand = cars
+      .filter((c) => c.state !== "lost")
+      .map((c) => {
+        const dist = Math.hypot((c.x - ox) * 12, (c.y - oy) * 9);
+        // 거리 + 적재율 + 근무시간을 함께 본 점수 (낮을수록 좋음)
+        const score = dist * 1.0 + (c.load / 100) * 3.2 + Math.max(0, c.hours - 6) * 2.4;
+        return { c, dist, score };
+      })
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 3);
+
+    cars.forEach((c) => (c.target = false));
+    cand.forEach((x) => (x.c.target = true));
+    order = { no: orderNo, to, cand };
+
+    $("#orderNo").textContent = "#" + orderNo;
+    $("#orderBox").innerHTML = `
+      <div class="aorder">
+        <div class="aorder-t">${to} 배송 요청</div>
+        <div class="aorder-d">파렛트 2 · 희망 도착 90분 내 · 냉장 아님</div>
+        <div class="acand">
+          ${order.cand.map((x, i) => `
+            <button class="acandi${i === 0 ? " best" : ""}" data-pick="${x.c.id}">
+              <span class="acandi-t">
+                <b>${x.c.name}</b>
+                ${i === 0 ? '<span class="acandi-tag">추천</span>' : ""}
+                <span class="acandi-why">${x.dist.toFixed(1)}km</span>
+              </span>
+              <span class="acandi-d">적재 ${x.c.load}% · 근무 ${x.c.hours}h${
+                x.c.hours > 6 ? " · 근무시간 임박" : ""}${x.c.load > 80 ? " · 적재 여유 부족" : ""}</span>
+            </button>`).join("")}
+        </div>
+      </div>`;
+    renderCars();
+
+    document.querySelectorAll("[data-pick]").forEach((b) =>
+      b.addEventListener("click", () => assign(+b.dataset.pick))
+    );
+  }
+
+  function assign(id) {
+    const c = cars.find((x) => x.id === id);
+    done++;
+    $("#stDone").innerHTML = done + '<small>건</small>';
+    c.state = "run";
+    c.load = Math.min(100, c.load + 18);
+    cars.forEach((x) => (x.target = false));
+    $("#orderNo").textContent = "배차 완료";
+    $("#orderBox").innerHTML = `
+      <div class="aorder">
+        <div class="aorder-t">${c.name} 배차 완료</div>
+        <div class="aorder-d">${order.to} · 기사 앱으로 즉시 전송되었습니다.<br>
+          수락 대기 → 상차 → 이동 → 완료 순으로 상태가 갱신됩니다.</div>
+      </div>`;
+    order = null;
+    renderCars();
+  }
+
+  /* ---------- 실행 ---------- */
+  new ResizeObserver(() => { resize(); if (reduce) { drawGrid(); drawCars(); } }).observe(cv);
+  resize();
+  renderCars();
+  if (reduce) { drawGrid(); drawCars(); $("#fps").textContent = cars.length + "대"; }
+  else requestAnimationFrame(tick);
+
+  // 신호 끊김 차량의 경과 시간 증가
+  setInterval(() => {
+    cars.filter((c) => c.state === "lost").forEach((c) => c.lostFor++);
+  }, 12000);
+
+  $("#btnNew").addEventListener("click", newOrder);
+  newOrder();
+})();
+</script>
+</body>
+</html>

@@ -42,8 +42,6 @@
     $$("[data-href-mail]").forEach((el) => (el.href = "mailto:" + CONFIG.email));
     $$("[data-href-kakao]").forEach((el) => (el.href = CONFIG.kakao));
     document.title = `${CONFIG.brandKo} — 웹 개발 · 매크로 자동화 · 게임 개발`;
-
-    if (!CONFIG.sampleNotice) $$("[data-sample-notice]").forEach((el) => el.remove());
   }
 
   /* ========================================================
@@ -521,9 +519,9 @@
     el.addEventListener("click", (e) => {
       const b = e.target.closest("[data-jump]");
       if (!b) return;
-      const btn = $(`[data-filter="${b.dataset.jump}"]`);
-      if (btn) btn.click();
-      $("#work").scrollIntoView({ behavior: "smooth", block: "start" });
+      filter.domain = b.dataset.jump;
+      filter.industry = null;
+      applyFilter(true);
     });
   }
 
@@ -564,6 +562,68 @@
   /* ========================================================
      6. 포트폴리오 그리드 + 필터
      ======================================================== */
+  /* 분야(domain) × 업종(industry) 두 축으로 거릅니다 */
+  const filter = { domain: "all", industry: null };
+
+  function applyFilter(scrollTo) {
+    const grid = $("[data-work-grid]");
+    if (!grid) return;
+    let shown = 0;
+
+    $$(".work", grid).forEach((card) => {
+      const okD = filter.domain === "all" || card.dataset.domain === filter.domain;
+      const okI = !filter.industry || card.dataset.industry === filter.industry;
+      const on = okD && okI;
+      card.hidden = !on;
+      if (on) {
+        card.style.animation = "none";
+        void card.offsetWidth;
+        card.style.animation = `pop .34s var(--ease) ${Math.min(shown, 8) * 26}ms both`;
+        shown++;
+      }
+    });
+
+    $$("[data-filter]").forEach((b) => {
+      const on = b.dataset.filter === filter.domain;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+    /* 작업 카드에도 data-industry 가 있으므로 스트립 버튼만 골라냅니다 */
+    $$(".strip-item[data-industry]").forEach((b) => {
+      const on = b.dataset.industry === filter.industry;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+
+    /* 활성 필터 안내 + 결과 없음 처리 */
+    const box = $("[data-work-active]");
+    if (box) {
+      const chips = [];
+      if (filter.industry) chips.push({ k: "industry", t: filter.industry });
+      if (filter.domain !== "all") chips.push({ k: "domain", t: DOMAIN_LABEL[filter.domain], c: DOMAIN_COLOR[filter.domain] });
+      if (!chips.length) {
+        box.hidden = true;
+        box.innerHTML = "";
+      } else {
+        box.hidden = false;
+        box.innerHTML =
+          `<span class="work-active-n">${shown}건</span>` +
+          chips.map((c) => `
+            <button class="work-active-chip" data-clear="${c.k}"
+                    style="${c.c ? `--dc:${c.c}` : ""}" aria-label="${esc(c.t)} 필터 해제">
+              ${esc(c.t)}<i aria-hidden="true">✕</i>
+            </button>`).join("") +
+          `<button class="work-active-reset" data-clear="all">전체 보기</button>` +
+          (shown === 0 ? `<span class="work-active-empty">조건에 맞는 작업이 없습니다. 다른 조합을 눌러보세요.</span>` : "");
+      }
+    }
+
+    if (scrollTo) {
+      const sec = $("#work");
+      if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
   function work() {
     const grid = $("[data-work-grid]");
     if (!grid) return;
@@ -572,14 +632,15 @@
       const c = DOMAIN_COLOR[p.domain];
       const kind = screensOf(p)[0].kind;
       return `
-      <button class="work reveal" data-open="${p.id}" data-domain="${p.domain}" style="--dc:${c}">
+      <button class="work reveal" data-open="${p.id}" data-domain="${p.domain}"
+              data-industry="${esc(p.industry || "")}" style="--dc:${c}">
         <span class="work-thumb">
           <img src="${sceneURI(kind, c, i + 1)}" alt="${esc(p.title)} 화면 목업" loading="lazy" width="${W}" height="${H}">
           <span class="work-badge"><i></i>${esc(p.catLabel)}</span>
           ${p.demo ? `<span class="work-demo">LIVE DEMO</span>` : ""}
         </span>
         <span class="work-body">
-          <span class="work-meta">${esc(p.code)}</span>
+          <span class="work-meta">${esc(p.code)}<b>${esc(p.industry || "")}</b></span>
           <span class="work-h">${esc(p.title)}</span>
           <span class="work-p">${esc(p.desc)}</span>
           <span class="work-tags">${p.tags.slice(0, 3).map((t) => `<span class="tag">${esc(t)}</span>`).join("")}</span>
@@ -588,7 +649,7 @@
       </button>`;
     }).join("");
 
-    /* 필터 버튼에 건수 표시 */
+    /* 분야 필터 버튼 */
     $$("[data-filter]").forEach((btn) => {
       const f = btn.dataset.filter;
       const n = f === "all" ? PROJECTS.length : PROJECTS.filter((p) => p.domain === f).length;
@@ -597,26 +658,53 @@
       cnt.textContent = n;
       btn.appendChild(cnt);
       if (f !== "all") btn.style.setProperty("--dc", DOMAIN_COLOR[f]);
-
       btn.addEventListener("click", () => {
-        $$("[data-filter]").forEach((b) => {
-          b.classList.remove("is-on");
-          b.setAttribute("aria-pressed", "false");
-        });
-        btn.classList.add("is-on");
-        btn.setAttribute("aria-pressed", "true");
-        let shown = 0;
-        $$(".work", grid).forEach((card) => {
-          const on = f === "all" || card.dataset.domain === f;
-          card.hidden = !on;
-          if (on) {
-            card.style.animation = "none";
-            void card.offsetWidth;
-            card.style.animation = `pop .34s var(--ease) ${Math.min(shown, 8) * 26}ms both`;
-            shown++;
-          }
-        });
+        filter.domain = f;
+        applyFilter(false);
       });
+    });
+
+    /* 활성 필터 해제 */
+    const box = $("[data-work-active]");
+    if (box) {
+      box.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-clear]");
+        if (!b) return;
+        const k = b.dataset.clear;
+        if (k === "all") { filter.domain = "all"; filter.industry = null; }
+        else if (k === "domain") filter.domain = "all";
+        else filter.industry = null;
+        applyFilter(false);
+      });
+    }
+  }
+
+  /* ========================================================
+     6-2. 업종 스트립 — 누르면 해당 업종 작업만 남습니다
+     ======================================================== */
+  function industries() {
+    const el = $("[data-industries]");
+    if (!el) return;
+
+    const tally = new Map();
+    PROJECTS.forEach((p) => {
+      if (!p.industry) return;
+      tally.set(p.industry, (tally.get(p.industry) || 0) + 1);
+    });
+    const list = [...tally.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ko"));
+
+    el.insertAdjacentHTML("beforeend", list.map(([name, n]) => `
+      <button class="strip-item" data-industry="${esc(name)}" aria-pressed="false">
+        ${esc(name)}<span class="strip-n">${n}</span>
+      </button>`).join(""));
+
+    el.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-industry]");
+      if (!b) return;
+      const name = b.dataset.industry;
+      filter.industry = filter.industry === name ? null : name;
+      filter.domain = "all";
+      applyFilter(true);
     });
   }
 
@@ -961,6 +1049,7 @@
     pillars();
     featured();
     work();
+    industries();
     modal();
     stack();
     plans();

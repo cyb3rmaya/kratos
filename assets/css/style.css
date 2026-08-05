@@ -30,12 +30,13 @@
   --bg-deep: #090a0f;
   --surface: #161a24;
   --raised: #1e2331;
-  --line: rgba(255, 255, 255, 0.09);
-  --line-strong: rgba(255, 255, 255, 0.16);
+  --line: rgba(255, 255, 255, 0.13);
+  --line-strong: rgba(255, 255, 255, 0.24);
 
-  --text: #edeff5;
-  --muted: #8b93a7;
-  --dim: #5f6779;
+  /* 본문 대비 — 어두운 배경에서 흐려 보이지 않도록 전부 올려 잡았습니다 */
+  --text: #f5f7fc;
+  --muted: #b2bacb;
+  --dim: #8a93a7;
 
   --cobalt: #4c6fff;
   --cobalt-soft: #7d95ff;
@@ -86,10 +87,13 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--body);
-  font-size: 16px;
-  line-height: 1.65;
-  letter-spacing: -0.01em;
-  -webkit-font-smoothing: antialiased;
+  font-size: 16.5px;
+  font-weight: 450;
+  line-height: 1.68;
+  letter-spacing: -0.008em;
+  /* antialiased 는 글자를 얇게 만듭니다. 선명하게 보이도록 기본값을 씁니다. */
+  -webkit-font-smoothing: auto;
+  text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 
@@ -1829,4 +1833,234 @@ h1, h2, h3, h4, p { margin: 0; }
   .stk-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .stk-label, .cs-stack-label, .cs-tl-w { padding-top: 0; }
   .sample-notice { font-size: 12.5px; }
+}
+
+/* ============================================================
+   29. 업종 스트립 — 클릭하면 해당 업종 작업만 남습니다
+   ============================================================ */
+.strip-inner { gap: 10px 8px; padding: 18px 0; }
+.strip-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  margin-right: 6px;
+}
+.strip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--body);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 14px;
+  transition: color 0.16s var(--ease), border-color 0.16s var(--ease),
+    background 0.16s var(--ease), transform 0.16s var(--ease);
+}
+.strip-item:hover {
+  color: var(--text);
+  border-color: var(--cobalt);
+  background: rgba(76, 111, 255, 0.1);
+  transform: translateY(-2px);
+}
+.strip-item.is-on {
+  background: var(--cobalt);
+  border-color: var(--cobalt);
+  color: #fff;
+}
+.strip-n {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dim);
+  background: rgba(255, 255, 255, 0.07);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.strip-item:hover .strip-n { color: var(--muted); }
+.strip-item.is-on .strip-n { background: rgba(0, 0, 0, 0.24); color: #fff; }
+
+/* ============================================================
+   30. 활성 필터 표시
+   ============================================================ */
+.work-active {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-bottom: var(--s4);
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+.work-active[hidden] { display: none; }
+.work-active-n {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  margin-right: 2px;
+}
+.work-active-chip {
+  --dc: var(--cobalt);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--dc);
+  background: color-mix(in srgb, var(--dc) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--dc) 42%, transparent);
+  border-radius: 999px;
+  padding: 6px 13px;
+  transition: background 0.16s var(--ease);
+}
+.work-active-chip:hover { background: color-mix(in srgb, var(--dc) 26%, transparent); }
+.work-active-chip i { font-style: normal; font-size: 11px; opacity: 0.8; }
+.work-active-reset {
+  background: transparent;
+  border: 0;
+  padding: 6px 4px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.work-active-reset:hover { color: var(--text); }
+.work-active-empty {
+  width: 100%;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--muted);
+  padding-top: 4px;
+}
+
+/* 작업 카드 메타에 업종 표시 */
+.work-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.work-meta b {
+  font-family: var(--body);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--dc);
+  background: color-mix(in srgb, var(--dc) 14%, transparent);
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================
+   31. 가독성 보강 — 글자를 진하고 선명하게
+   ============================================================ */
+
+/* 본문·설명 계열: 무게를 올려 흐려 보이지 않게 */
+.sec-lead { font-size: 16.5px; font-weight: 500; line-height: 1.72; }
+.hero-lead { font-weight: 500; }
+.hero-domains span { font-size: 12.5px; font-weight: 500; color: var(--muted); }
+.pillar-desc { font-size: 14.5px; font-weight: 500; }
+.pillar-list li { font-size: 13.5px; font-weight: 500; color: var(--muted); }
+.pillar-metric span { font-size: 12.5px; font-weight: 600; }
+.svc p { font-size: 14.5px; font-weight: 500; }
+.svc li { font-size: 13.5px; font-weight: 500; color: var(--muted); }
+.case-desc { font-weight: 500; }
+.case-metrics dt { font-size: 12px; font-weight: 600; color: var(--muted); }
+.work-p { font-size: 14px; font-weight: 500; }
+.work-result { font-size: 13.5px; font-weight: 700; }
+.step p { font-size: 14.5px; font-weight: 500; }
+.stat-label { font-size: 14.5px; font-weight: 600; }
+.plan-desc { font-size: 14px; font-weight: 500; }
+.plan-feats li { font-size: 14px; font-weight: 500; color: var(--muted); }
+.plan-note { font-size: 13px; font-weight: 500; }
+.quote p { font-size: 15.5px; font-weight: 500; line-height: 1.82; }
+.quote-by span { font-size: 13px; font-weight: 500; color: var(--muted); }
+.faq-q { font-size: 17px; font-weight: 700; }
+.faq-a p { font-size: 15.5px; font-weight: 500; line-height: 1.85; }
+.cs-lead { font-size: 15.5px; font-weight: 500; }
+.cs-block p { font-size: 15.5px; font-weight: 500; line-height: 1.88; }
+.cs-feats span { font-size: 14px; font-weight: 500; }
+.cs-timeline span { font-size: 14px; font-weight: 500; }
+.cs-learn p { font-size: 15px; font-weight: 500; }
+.cs-note { font-size: 13.5px; font-weight: 500; }
+.cs-metrics dt { font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.cs-facts dd { font-size: 14.5px; font-weight: 700; }
+.direct-item span { font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.direct-item b { font-size: 15.5px; font-weight: 700; }
+.field label { font-size: 13.5px; font-weight: 700; color: var(--muted); }
+.field input, .field textarea, .field select { font-size: 15.5px; font-weight: 500; }
+.picker span { font-size: 14.5px; font-weight: 600; }
+.form-agree { font-size: 13.5px; font-weight: 500; color: var(--muted); }
+.form-status { font-size: 14.5px; font-weight: 600; }
+.footer-tag { font-size: 14.5px; font-weight: 500; }
+.footer-links a { font-size: 14.5px; font-weight: 600; }
+.nav a { font-size: 15px; font-weight: 600; }
+
+/* 작은 라벨·모노 계열: 크기를 키우고 굵게 */
+.eyebrow { font-size: 12.5px; font-weight: 700; }
+.chip { font-size: 12.5px; font-weight: 500; }
+.tag { font-size: 11.5px; font-weight: 500; color: var(--muted); }
+.filter { font-size: 14.5px; font-weight: 600; }
+.filter-n { font-size: 11.5px; font-weight: 700; }
+.pillar-en { font-size: 11.5px; font-weight: 700; }
+.pillar-count { font-size: 11.5px; font-weight: 600; }
+.case-domain { font-size: 11.5px; font-weight: 700; }
+.case-tagline { font-size: 11.5px; font-weight: 600; }
+.work-badge { font-size: 11.5px; font-weight: 700; }
+.work-demo { font-size: 11.5px; font-weight: 800; }
+.step-time { font-size: 12px; font-weight: 600; }
+.step-no { font-size: 14px; font-weight: 800; }
+.stk-label { font-size: 11.5px; font-weight: 600; }
+.cs-stack-label { font-size: 11.5px; font-weight: 600; }
+.cs-facts dt { font-size: 11px; font-weight: 600; }
+.cs-tl-w { font-size: 12.5px; font-weight: 700; }
+.cs-tab { font-size: 14.5px; font-weight: 700; }
+.cs-h-tag { font-size: 11.5px; font-weight: 800; }
+.cs-learn-label { font-size: 11.5px; font-weight: 700; }
+.plan-flag { font-size: 11.5px; font-weight: 700; }
+.device-hint { font-size: 12px; font-weight: 500; color: var(--muted); }
+.device-tab { font-size: 13.5px; font-weight: 700; }
+.footer-info { font-size: 13.5px; font-weight: 500; }
+.footer-copy { font-size: 12.5px; font-weight: 500; }
+
+/* 강조 요소는 한 단계 더 */
+.hero-lead strong { font-weight: 700; color: var(--text); }
+.sec-lead b { font-weight: 700; }
+.chip b { font-weight: 800; }
+.accent { color: #93a8ff; font-weight: 700; }
+.cs-feats b { font-size: 15.5px; font-weight: 700; }
+.cs-timeline b { font-size: 15.5px; font-weight: 700; }
+.work-h { font-size: 17.5px; font-weight: 800; }
+.quote-by b { font-size: 14.5px; font-weight: 700; }
+
+/* 푸터 연락처를 누를 수 있게 */
+.footer-info a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line-strong);
+}
+.footer-info a:hover { color: var(--text); text-decoration-color: var(--cobalt); }
+.footer-info b { color: var(--text); font-weight: 800; }
+
+/* ============================================================
+   32. 반응형 — 스트립
+   ============================================================ */
+@media (max-width: 700px) {
+  .strip-inner { justify-content: flex-start; }
+  .strip-label { width: 100%; margin-bottom: 2px; }
+  .strip-item { font-size: 13px; padding: 7px 12px; }
+  .work-active { padding: 12px 14px; }
 }

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>실시간 참여 퀴즈쇼 — 크라토스 데모</title>
+<meta name="description" content="행사장 관객 수백 명이 휴대폰으로 동시에 참여하는 실시간 퀴즈 게임 데모.">
+<link rel="stylesheet" href="../demo.css">
+<style>
+.qhead { padding: 26px 0 20px; }
+.qkicker { font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em; color: #b5851a; font-weight: 700; }
+.qtitle { font-size: clamp(22px, 3.4vw, 30px); font-weight: 800; letter-spacing: -.03em; margin-top: 6px; }
+.qlead { color: var(--muted); font-size: 14.5px; margin-top: 8px; max-width: 64ch; font-weight: 500; }
+
+.qgrid { display: grid; grid-template-columns: minmax(0,215px) minmax(0,1fr) minmax(0,260px); gap: 14px; padding-bottom: 54px; align-items: start; }
+.qcard { border: 1px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden; }
+.qcard-h { padding: 12px 15px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
+.qcard-h b { font-size: 13px; font-weight: 700; letter-spacing: -.02em; }
+.qcard-h span { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--muted); font-weight: 500; }
+
+/* 무대 화면 */
+.qstage { background: #0b0d13; border-color: #1e2331; }
+.qstage-in { padding: 22px 20px 20px; position: relative; }
+.qmeta { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 11px; color: #7d8598; }
+.qmeta b { color: #ffb020; }
+.qq { font-size: clamp(17px, 2.4vw, 23px); font-weight: 800; color: #f2f4f9; letter-spacing: -.03em;
+  line-height: 1.4; margin-top: 12px; text-wrap: balance; }
+.qopts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; margin-top: 16px; }
+.qopt { border: 1px solid #2a3042; background: #12151f; border-radius: 9px; padding: 13px 14px;
+  text-align: left; color: #c9cfdb; font-size: 13.5px; font-weight: 600; transition: .15s; display: flex; gap: 9px; align-items: center; }
+.qopt:hover:not(:disabled) { border-color: #ffb020; color: #f2f4f9; }
+.qopt:disabled { cursor: default; }
+.qopt-k { font-family: var(--mono); font-size: 10.5px; width: 19px; height: 19px; border-radius: 4px;
+  background: #2a3042; color: #a8b0c2; display: grid; place-items: center; flex: none; font-weight: 700; }
+.qopt.picked { border-color: #ffb020; background: rgba(255,176,32,.1); color: #f2f4f9; }
+.qopt.picked .qopt-k { background: #ffb020; color: #0b0d13; }
+.qopt.right { border-color: #22d3a6; background: rgba(34,211,166,.12); color: #f2f4f9; }
+.qopt.right .qopt-k { background: #22d3a6; color: #0b0d13; }
+.qopt.wrong { border-color: #ef4444; background: rgba(239,68,68,.1); opacity: .75; }
+.qopt-pct { margin-left: auto; font-family: var(--mono); font-size: 11px; color: #7d8598; font-variant-numeric: tabular-nums; }
+
+.qbar { height: 5px; background: #1a1f2b; border-radius: 3px; margin-top: 16px; overflow: hidden; }
+.qbar i { display: block; height: 100%; background: #ffb020; border-radius: 3px; width: 100%; }
+.qbar i.low { background: #ef4444; }
+.qfoot { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-family: var(--mono); font-size: 10.5px; color: #7d8598; }
+.qfoot b { color: #f2f4f9; }
+.qresult { margin-top: 14px; padding: 13px 15px; border-radius: 9px; background: #12151f; border: 1px solid #2a3042;
+  font-size: 13px; color: #c9cfdb; font-weight: 600; }
+.qresult b { color: #22d3a6; }
+.qresult.miss b { color: #ef4444; }
+
+/* 진행자 콘솔 */
+.qctl { padding: 14px 15px; display: grid; gap: 8px; }
+.qbtn { border-radius: 7px; padding: 10px 14px; font-size: 12.5px; font-weight: 700; transition: .15s; width: 100%; }
+.qbtn-go { background: #14161a; color: #fff; }
+.qbtn-go:hover { background: #2f3542; }
+.qbtn-go:disabled { background: #eef0f5; color: #a8b0c2; cursor: not-allowed; }
+.qbtn-gh { border: 1px solid var(--line); color: var(--muted); }
+.qbtn-gh:hover { border-color: #14161a; color: var(--ink); }
+.qbtn-void { border: 1px solid rgba(239,68,68,.4); color: #c92a2a; }
+.qbtn-void:hover { background: rgba(239,68,68,.06); }
+.qctl-note { font-size: 11.5px; color: var(--muted); line-height: 1.6; margin-top: 4px; font-weight: 500; }
+
+.qstats { padding: 13px 15px; border-top: 1px solid var(--line); display: grid; gap: 9px; }
+.qstat { display: flex; align-items: baseline; gap: 8px; font-size: 12px; }
+.qstat span { color: var(--muted); font-weight: 600; }
+.qstat b { margin-left: auto; font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* 순위 */
+.qrank { max-height: 400px; overflow-y: auto; }
+.qrow { display: grid; grid-template-columns: 26px 1fr auto; gap: 9px; align-items: center;
+  padding: 9px 14px; border-bottom: 1px solid var(--line); transition: background .3s; }
+.qrow:last-child { border-bottom: 0; }
+.qrow.me { background: rgba(255,176,32,.09); }
+.qrow.up { background: rgba(34,211,166,.12); }
+.qrank-n { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--muted); text-align: center;
+  font-variant-numeric: tabular-nums; }
+.qrank-n.top { color: #b5851a; }
+.qrow b { font-size: 12.5px; font-weight: 700; }
+.qrow .me-tag { font-family: var(--mono); font-size: 9px; color: #b5851a; margin-left: 5px; }
+.qrow-s { font-family: var(--mono); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.qfooter { border-top: 1px solid var(--line); padding: 20px 0 56px; font-size: 13px; color: var(--muted); line-height: 1.8; font-weight: 500; }
+.qfooter b { color: var(--ink); font-weight: 700; }
+
+@media (max-width: 1000px) {
+  .qgrid { grid-template-columns: minmax(0,1fr); }
+  .qopts { grid-template-columns: minmax(0,1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="kbar">
+  <span class="kbar-mark"></span>
+  <b>KRATOS</b>
+  <span class="kbar-tag">DEMO</span>
+  <span class="kbar-note">실시간 퀴즈쇼 — 답을 고르면 순위가 즉시 바뀝니다</span>
+  <a class="kbar-back" href="../../index.html">← 포트폴리오로</a>
+</div>
+
+<div class="dwrap">
+  <nav class="dnav">
+    <div class="dlogo">퀴즈쇼 콘솔</div>
+    <div class="dmenu"><a href="#">진행</a><a href="#">문제</a><a href="#">참가자</a><a href="#">결과</a></div>
+  </nav>
+
+  <header class="qhead">
+    <div class="qkicker">LIVE QUIZ</div>
+    <h1 class="qtitle">관객 1,240명이 동시에 답을 냅니다</h1>
+    <p class="qlead">
+      가운데가 무대 화면입니다. 답을 고르면 <b>0.3초 안에</b> 오른쪽 순위에 반영됩니다.
+      왼쪽은 진행자 콘솔 — 현장에서 사고가 나면 <b>무효 처리</b>로 넘길 수 있어야 행사가 굴러갑니다.
+    </p>
+  </header>
+
+  <div class="qgrid">
+
+    <!-- 진행자 콘솔 -->
+    <div>
+      <div class="qcard">
+        <div class="qcard-h"><b>진행자 콘솔</b><span id="ctlState">대기</span></div>
+        <div class="qctl">
+          <button class="qbtn qbtn-go" id="btnNext">다음 문제 →</button>
+          <button class="qbtn qbtn-gh" id="btnPause">일시정지</button>
+          <button class="qbtn qbtn-void" id="btnVoid">이 문제 무효 처리</button>
+          <p class="qctl-note">실제 행사에서 문제 오타가 발견됐을 때 무효 버튼 하나로 넘어갔습니다.</p>
+        </div>
+        <div class="qstats">
+          <div class="qstat"><span>동시 참여</span><b id="stJoin">1,240</b></div>
+          <div class="qstat"><span>제출–순위 반영</span><b id="stLag">0.3초</b></div>
+          <div class="qstat"><span>단말 간 시각 오차</span><b>0.1초</b></div>
+          <div class="qstat"><span>현재 문제</span><b id="stQ">1 / 6</b></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 무대 화면 -->
+    <div class="qcard qstage">
+      <div class="qstage-in">
+        <div class="qmeta"><span id="qNo">Q1</span> · <b id="qPt">1,000점</b> · <span id="qCat">상식</span></div>
+        <h2 class="qq" id="qText">문제를 불러오는 중…</h2>
+        <div class="qopts" id="qOpts"></div>
+        <div class="qbar"><i id="qBar"></i></div>
+        <div class="qfoot"><span id="qTime">15.0초</span><span>남음</span>
+          <span style="margin-left:auto">제출 <b id="qSub">0</b>명</span></div>
+        <div class="qresult" id="qRes" hidden></div>
+      </div>
+    </div>
+
+    <!-- 순위 -->
+    <div class="qcard">
+      <div class="qcard-h"><b>실시간 순위</b><span id="rkN">—</span></div>
+      <div class="qrank" id="rank"></div>
+    </div>
+  </div>
+
+  <p class="qfooter">
+    실제 납품본은 답안 제출을 <b>인메모리 큐</b>로 먼저 받고 순위 계산도 메모리에서 처리한 뒤,
+    결과만 무대 화면으로 밀어 보냅니다. 저장은 뒤에서 비동기로 진행합니다 —
+    수백 명이 같은 순간에 버튼을 눌러도 순위가 밀리지 않아야 진행이 어색해지지 않습니다.<br>
+    행사장 와이파이는 항상 불안정하므로, <b>끊긴 참가자가 재접속하면</b> 진행 중인 문제로 즉시 복귀하고 제출한 답은 유지됩니다.
+  </p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (s) => document.querySelector(s);
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const QUIZ = [
+    { q: "HTTP 상태 코드 404가 뜻하는 것은?", c: "네트워크",
+      o: ["요청한 자원을 찾을 수 없음", "서버 내부 오류", "권한이 없음", "요청이 너무 많음"], a: 0 },
+    { q: "한국에서 통신판매업 신고를 하는 곳은?", c: "실무",
+      o: ["국세청", "관할 시·군·구청", "공정거래위원회", "중소벤처기업부"], a: 1 },
+    { q: "웹 폰트 형식 중 압축률이 가장 좋은 것은?", c: "개발",
+      o: ["TTF", "EOT", "WOFF2", "SVG"], a: 2 },
+    { q: "게임에서 '고정 타임스텝'을 쓰는 주된 이유는?", c: "게임",
+      o: ["그래픽을 예쁘게", "기기 성능과 무관하게 같은 결과", "배터리 절약", "용량 감소"], a: 1 },
+    { q: "업무 자동화에서 가장 먼저 설계해야 하는 것은?", c: "자동화",
+      o: ["실행 속도", "예쁜 화면", "실패했을 때의 처리", "로그 색상"], a: 2 },
+    { q: "정적 사이트 호스팅의 장점이 아닌 것은?", c: "인프라",
+      o: ["서버 관리 불필요", "CDN 캐싱 용이", "실시간 DB 쿼리 처리", "비용 저렴"], a: 2 },
+  ];
+
+  const BOTS = ["감귤도둑","야근의신","광부K","밤샘장인","무한리필","코드깎는노인","일곱번째","퇴근하고싶다",
+                "버그헌터","키보드워리어","리팩터링","캐시미스"];
+  let players = BOTS.map((n) => ({ n, s: 0, me: false, up: false }));
+  players.push({ n: "나", s: 0, me: true, up: false });
+
+  let qi = -1, timer = null, tick = null, remain = 0, picked = null, locked = false, paused = false;
+  let submitted = 0;
+  const DUR = 15000;
+
+  /* ---------- 순위 ---------- */
+  function renderRank() {
+    const sorted = [...players].sort((a, b) => b.s - a.s || a.n.localeCompare(b.n));
+    $("#rkN").textContent = players.length + "명 표시";
+    $("#rank").innerHTML = sorted.slice(0, 13).map((p, i) => `
+      <div class="qrow${p.me ? " me" : ""}${p.up ? " up" : ""}">
+        <span class="qrank-n${i < 3 ? " top" : ""}">${i + 1}</span>
+        <b>${p.n}${p.me ? '<span class="me-tag">ME</span>' : ""}</b>
+        <span class="qrow-s">${p.s.toLocaleString()}</span>
+      </div>`).join("");
+    setTimeout(() => players.forEach((p) => (p.up = false)), 600);
+  }
+
+  /* ---------- 문제 ---------- */
+  function loadQ() {
+    qi = (qi + 1) % QUIZ.length;
+    const q = QUIZ[qi];
+    picked = null; locked = false; submitted = 0; remain = DUR;
+
+    $("#qNo").textContent = "Q" + (qi + 1);
+    $("#qCat").textContent = q.c;
+    $("#qPt").textContent = "1,000점";
+    $("#qText").textContent = q.q;
+    $("#stQ").textContent = (qi + 1) + " / " + QUIZ.length;
+    $("#qRes").hidden = true;
+    $("#qSub").textContent = "0";
+    $("#ctlState").textContent = "진행 중";
+    $("#btnNext").disabled = true;
+
+    $("#qOpts").innerHTML = q.o.map((t, i) => `
+      <button class="qopt" data-o="${i}">
+        <span class="qopt-k">${"ABCD"[i]}</span>${t}
+        <span class="qopt-pct" data-pct="${i}"></span>
+      </button>`).join("");
+    document.querySelectorAll("[data-o]").forEach((b) =>
+      b.addEventListener("click", () => pick(+b.dataset.o))
+    );
+
+    const bar = $("#qBar");
+    bar.classList.remove("low");
+    bar.style.transition = "none";
+    bar.style.width = "100%";
+
+    if (reduce) { $("#qTime").textContent = "15.0초"; $("#btnNext").disabled = false; return; }
+    requestAnimationFrame(() => {
+      bar.style.transition = `width ${DUR}ms linear`;
+      bar.style.width = "0%";
+    });
+    startTimer();
+  }
+
+  function startTimer() {
+    clearInterval(tick); clearTimeout(timer);
+    const t0 = performance.now();
+    const base = remain;
+    tick = setInterval(() => {
+      if (paused) return;
+      remain = Math.max(0, base - (performance.now() - t0));
+      $("#qTime").textContent = (remain / 1000).toFixed(1) + "초";
+      if (remain < 5000) $("#qBar").classList.add("low");
+      // 다른 참가자들이 계속 제출
+      if (Math.random() < .55 && submitted < 1240) {
+        submitted += Math.floor(Math.random() * 90) + 20;
+        $("#qSub").textContent = Math.min(submitted, 1240).toLocaleString();
+      }
+      if (remain <= 0) reveal();
+    }, 100);
+  }
+
+  function pick(i) {
+    if (locked || paused) return;
+    picked = i;
+    document.querySelectorAll("[data-o]").forEach((b, n) =>
+      b.classList.toggle("picked", n === i)
+    );
+    // 빨리 답할수록 점수가 높은 구조
+    reveal();
+  }
+
+  function reveal() {
+    if (locked) return;
+    locked = true;
+    clearInterval(tick);
+    const q = QUIZ[qi];
+    const speedBonus = Math.round((remain / DUR) * 400);
+    const gained = picked === q.a ? 600 + speedBonus : 0;
+
+    // 선택 분포(연출용)
+    const dist = [0, 0, 0, 0];
+    let left = 100;
+    for (let i = 0; i < 4; i++) {
+      dist[i] = i === q.a ? Math.round(38 + Math.random() * 22) : Math.round(Math.random() * 22);
+    }
+    const sum = dist.reduce((a, b) => a + b, 0);
+    dist.forEach((_, i) => (dist[i] = Math.round((dist[i] / sum) * 100)));
+
+    document.querySelectorAll("[data-o]").forEach((b, n) => {
+      b.disabled = true;
+      if (n === q.a) b.classList.add("right");
+      else if (n === picked) b.classList.add("wrong");
+      b.querySelector("[data-pct]").textContent = dist[n] + "%";
+    });
+
+    const me = players.find((p) => p.me);
+    if (gained) { me.s += gained; me.up = true; }
+    players.filter((p) => !p.me).forEach((p) => {
+      if (Math.random() < .58) { p.s += 600 + Math.round(Math.random() * 400); p.up = true; }
+    });
+
+    const res = $("#qRes");
+    res.hidden = false;
+    res.className = "qresult" + (gained ? "" : " miss");
+    res.innerHTML = picked === null
+      ? "시간 초과 — <b>0점</b>. 정답은 <b>" + "ABCD"[q.a] + "</b>번입니다."
+      : gained
+        ? `정답! <b>+${gained.toLocaleString()}점</b> (기본 600 + 속도 보너스 ${speedBonus})`
+        : `아쉽습니다. 정답은 <b>${"ABCD"[q.a]}</b>번입니다.`;
+
+    $("#qSub").textContent = "1,240";
+    $("#ctlState").textContent = "채점 완료";
+    $("#btnNext").disabled = false;
+    renderRank();
+  }
+
+  /* ---------- 진행자 조작 ---------- */
+  $("#btnNext").addEventListener("click", loadQ);
+  $("#btnPause").addEventListener("click", (e) => {
+    paused = !paused;
+    e.target.textContent = paused ? "재개하기" : "일시정지";
+    $("#ctlState").textContent = paused ? "일시정지" : "진행 중";
+  });
+  $("#btnVoid").addEventListener("click", () => {
+    clearInterval(tick);
+    locked = true;
+    const res = $("#qRes");
+    res.hidden = false;
+    res.className = "qresult miss";
+    res.innerHTML = "이 문제는 <b>무효 처리</b>되었습니다. 아무도 점수를 얻거나 잃지 않습니다.";
+    document.querySelectorAll("[data-o]").forEach((b) => (b.disabled = true));
+    $("#ctlState").textContent = "무효 처리";
+    $("#btnNext").disabled = false;
+  });
+
+  renderRank();
+  loadQ();
+})();
+</script>
+</body>
+</html>

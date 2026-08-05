@@ -22,20 +22,14 @@
 const CONFIG = {
   brandEn: "KRATOS",               // 로고 영문
   brandKo: "크라토스",               // 로고 한글 / 회사명
-  owner: "OOO",                    // 대표자명
-  tagline: "화면 만드는 사람",
-  phone: "010-0000-0000",
-  phoneHref: "tel:01000000000",
-  email: "hello@example.com",
-  kakao: "https://pf.kakao.com/_xxxxxx",   // 카카오톡 채널 URL
-  address: "서울특별시 OO구 OO로 00, 0층",
-  bizNo: "000-00-00000",           // 사업자등록번호
-  mailOrderNo: "제0000-서울OO-0000호", // 통신판매업신고번호
-  hours: "평일 10:00 – 19:00 (주말·공휴일 휴무)",
+  owner: "이준서",                  // 대표자명
+  tagline: "코드로 되는 건 다 만듭니다",
+  phone: "010-6588-5414",
+  phoneHref: "tel:01065885414",
+  email: "ljsnavy@naver.com",
+  kakao: "http://pf.kakao.com/_xixlxiBX/chat",   // 카카오톡 채널 채팅
+  hours: "연중무휴",
   founded: 2019,                   // 창업연도 (경력 자동 계산)
-
-  // 포트폴리오가 예시 데이터임을 알리는 배너. 실제 작업물로 교체 후 false 로 바꾸세요.
-  sampleNotice: true,
 };
 
 /* ------------------------------------------------------------
@@ -101,6 +95,7 @@ const PROJECTS = [
   /* ==================== 매크로 · 자동화 ==================== */
   {
     id: "m01",
+    industry: "오픈마켓 셀러",
     domain: "macro",
     cat: "macro",
     catLabel: "업무 자동화",
@@ -150,6 +145,7 @@ const PROJECTS = [
 
   {
     id: "m02",
+    industry: "오픈마켓 셀러",
     domain: "macro",
     cat: "macro",
     catLabel: "동기화 봇",
@@ -158,7 +154,7 @@ const PROJECTS = [
     desc: "한 곳에서 팔리면 나머지 판매처 재고가 즉시 줄어드는 재고 연동 프로그램.",
     tags: ["Node.js", "웹훅", "큐 처리", "재고 정합성"],
     result: "품절 취소 월 34건 → 1건",
-    demo: null,
+    demo: "demo/sync/index.html",
     facts: { 기간: "4주", 역할: "설계·개발", 규모: "1인", 상태: "운영 중" },
     problem:
       "같은 상품을 자사몰과 오픈마켓 네 곳에서 팔다 보니 재고가 어긋났습니다. 한정 수량 상품이 동시에 팔리면 없는 물건을 판 셈이 되어 취소·환불이 발생했고, 취소율이 올라가면 오픈마켓 노출 순위까지 떨어졌습니다.",
@@ -196,6 +192,7 @@ const PROJECTS = [
 
   {
     id: "m03",
+    industry: "제조·물류",
     domain: "macro",
     cat: "macro",
     catLabel: "데이터 수집",
@@ -241,6 +238,7 @@ const PROJECTS = [
 
   {
     id: "m04",
+    industry: "회계·세무",
     domain: "macro",
     cat: "macro",
     catLabel: "회계 자동화",
@@ -288,6 +286,7 @@ const PROJECTS = [
 
   {
     id: "m05",
+    industry: "사내 시스템",
     domain: "macro",
     cat: "macro",
     catLabel: "사내 봇",
@@ -330,6 +329,7 @@ const PROJECTS = [
 
   {
     id: "m06",
+    industry: "제조·물류",
     domain: "macro",
     cat: "macro",
     catLabel: "설비 모니터링",
@@ -378,6 +378,7 @@ const PROJECTS = [
   /* ==================== 웹 개발 ==================== */
   {
     id: "w01",
+    industry: "농수산 D2C",
     domain: "web",
     cat: "shop",
     catLabel: "쇼핑몰",
@@ -431,6 +432,7 @@ const PROJECTS = [
 
   {
     id: "w02",
+    industry: "브랜드 커머스",
     domain: "web",
     cat: "shop",
     catLabel: "쇼핑몰",
@@ -478,6 +480,7 @@ const PROJECTS = [
 
   {
     id: "w03",
+    industry: "법무·전문직",
     domain: "web",
     cat: "site",
     catLabel: "기업 홈페이지",
@@ -530,6 +533,7 @@ const PROJECTS = [
 
   {
     id: "w04",
+    industry: "병원·의원",
     domain: "web",
     cat: "site",
     catLabel: "예약 홈페이지",
@@ -576,6 +580,7 @@ const PROJECTS = [
 
   {
     id: "w05",
+    industry: "제조·물류",
     domain: "web",
     cat: "site",
     catLabel: "다국어 사이트",
@@ -623,6 +628,7 @@ const PROJECTS = [
 
   {
     id: "w06",
+    industry: "미디어·콘텐츠",
     domain: "web",
     cat: "blog",
     catLabel: "콘텐츠 플랫폼",
@@ -676,6 +682,7 @@ const PROJECTS = [
 
   {
     id: "w07",
+    industry: "사내 시스템",
     domain: "web",
     cat: "blog",
     catLabel: "사내 시스템",
@@ -724,6 +731,7 @@ const PROJECTS = [
 
   {
     id: "w08",
+    industry: "제조·물류",
     domain: "web",
     cat: "app",
     catLabel: "웹앱 · 대시보드",
@@ -732,7 +740,7 @@ const PROJECTS = [
     desc: "차량 위치·배송 상태·기사 배정을 한 화면에서 관리하는 실시간 관제 웹앱.",
     tags: ["실시간 지도", "WebSocket", "배차 알고리즘", "대용량 렌더링"],
     result: "배차 처리 건당 4분 → 25초",
-    demo: null,
+    demo: "demo/admin/index.html",
     facts: { 기간: "12주", 역할: "설계·프론트 리드", 규모: "4인", 상태: "운영 중" },
     problem:
       "배차 담당자가 전화와 엑셀로 차량을 배정하고 있었습니다. 어느 차가 어디 있는지 실시간으로 알 수 없어 가까운 차를 놓치고 먼 차를 보내는 일이 잦았습니다.",
@@ -776,6 +784,7 @@ const PROJECTS = [
 
   {
     id: "w09",
+    industry: "프랜차이즈",
     domain: "web",
     cat: "app",
     catLabel: "웹앱 · SaaS",
@@ -823,6 +832,7 @@ const PROJECTS = [
 
   {
     id: "w10",
+    industry: "브랜드 커머스",
     domain: "web",
     cat: "site",
     catLabel: "랜딩 · 이벤트",
@@ -867,6 +877,7 @@ const PROJECTS = [
   /* ==================== 게임 개발 ==================== */
   {
     id: "g01",
+    industry: "게임 퍼블리셔",
     domain: "game",
     cat: "game",
     catLabel: "모바일 게임",
@@ -922,6 +933,7 @@ const PROJECTS = [
 
   {
     id: "g02",
+    industry: "브랜드 커머스",
     domain: "game",
     cat: "game",
     catLabel: "웹게임 · 이벤트",
@@ -972,6 +984,7 @@ const PROJECTS = [
 
   {
     id: "g03",
+    industry: "게임 퍼블리셔",
     domain: "game",
     cat: "game",
     catLabel: "PC · Steam",
@@ -1024,6 +1037,7 @@ const PROJECTS = [
 
   {
     id: "g04",
+    industry: "교육",
     domain: "game",
     cat: "game",
     catLabel: "교육용 게임",
@@ -1071,6 +1085,7 @@ const PROJECTS = [
 
   {
     id: "g05",
+    industry: "미디어·콘텐츠",
     domain: "game",
     cat: "game",
     catLabel: "실시간 멀티",
@@ -1079,7 +1094,7 @@ const PROJECTS = [
     desc: "행사장에서 관객 수백 명이 휴대폰으로 동시에 참여하는 실시간 퀴즈 게임.",
     tags: ["WebSocket", "동시성", "진행자 콘솔", "무대 연출"],
     result: "단일 행사 동시 참여 1,240명, 지연 0.3초",
-    demo: null,
+    demo: "demo/quiz/index.html",
     facts: { 기간: "6주", 역할: "기획·개발", 규모: "2인", 상태: "운영 중" },
     problem:
       "행사장에서 관객이 휴대폰으로 동시에 답을 제출하면 순간적으로 요청이 몰립니다. 정답 순위를 실시간으로 무대 화면에 띄워야 하는데, 조금만 밀려도 진행이 어색해집니다.",
