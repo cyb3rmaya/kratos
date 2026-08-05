@@ -2,7 +2,14 @@
 
 빌드 도구 없는 정적 사이트입니다. 압축을 풀고 `index.html`을 열면 바로 확인할 수 있습니다.
 
-**배포된 미리보기** — https://claude.ai/code/artifact/df9494f1-08d3-4baf-925e-587717b0031d
+## 🌐 https://cyb3rmaya.github.io/kratos-site/
+
+GitHub Pages로 배포되어 있습니다. `main` 브랜치에 push하면 1~2분 뒤 자동으로 반영됩니다.
+정적 CDN이라 켜둘 서버가 없고, 계정이 살아 있는 한 URL이 유지됩니다.
+
+```bash
+git add -A && git commit -m "내용 수정" && git push
+```
 
 ```
 site/
@@ -173,17 +180,35 @@ f.reset();
 
 ## 5. 배포
 
-### 일반 웹호스팅 — `site` 폴더를 그대로 올립니다
+### 현재 설정 — GitHub Pages (자동)
+
+저장소: https://github.com/cyb3rmaya/kratos-site
+공개 주소: **https://cyb3rmaya.github.io/kratos-site/**
+
+`main` 브랜치에 push하면 끝입니다. 별도 빌드 단계가 없어 1~2분 뒤 반영됩니다.
+HTTPS는 자동 적용되고, 서버 프로세스가 없으므로 트래픽이 없어도 잠들지 않습니다.
+
+### 내 도메인 붙이기
+
+1. 가비아·후이즈에서 도메인 구입
+2. DNS에 `CNAME` 레코드 → `cyb3rmaya.github.io`
+3. 저장소 Settings → Pages → Custom domain 입력 → Enforce HTTPS 체크
+
+### 다른 호스팅으로 옮길 때
 
 | 방법 | 절차 |
 |---|---|
-| **Netlify** (가장 쉬움) | app.netlify.com 접속 → `site` 폴더를 드래그앤드롭 |
-| **Vercel** | GitHub에 올린 뒤 import, 빌드 설정 없이 그대로 배포 |
-| **GitHub Pages** | 저장소 push → Settings → Pages → 브랜치 지정 |
+| **Netlify** | app.netlify.com 접속 → `site` 폴더를 드래그앤드롭 |
+| **Vercel** | GitHub 저장소를 import, 빌드 설정 없이 그대로 배포 |
+| **Cloudflare Pages** | 저장소 연결, 빌드 명령 없음 / 출력 디렉터리 `/` |
 | **가비아·카페24 웹호스팅** | FTP로 폴더 전체 업로드 |
 
-`dist/` 와 `assets/fonts/` 는 올리지 않아도 됩니다. 도메인은 가비아·후이즈에서
-구입 후 DNS만 연결하면 되고, Netlify·Vercel은 SSL이 자동입니다.
+`dist/` 와 `assets/fonts/` 는 올리지 않아도 됩니다.
+
+> **Supabase는 이 용도로 쓸 수 없습니다.** Storage든 Edge Function이든
+> `*.supabase.co` 도메인에서 나가는 HTML 응답을 전부 `text/plain` 으로 바꿉니다
+> (공용 도메인이 피싱에 쓰이는 것을 막는 정책). 브라우저가 페이지로 렌더링하지 않고
+> 소스 코드를 글자로 보여줍니다. 유료 커스텀 도메인을 붙이면 해제됩니다.
 
 ### 단일 파일이 필요할 때 — `node build.mjs`
 
