@@ -19,7 +19,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const REPO = "cyb3rmaya/kratos";
+const REPO = "cyb3rmaya/cyb3rmaya.github.io";
 const PAGES_IP = ["185.199.108.153", "185.199.109.153", "185.199.110.153", "185.199.111.153"];
 const PAGES_HOST = "cyb3rmaya.github.io";
 
@@ -101,4 +101,4 @@ console.log(`
 
 인증서 발급에 10~30분 걸립니다. 그 전까지는 보안 경고가 뜰 수 있는데 정상입니다.
 발급이 끝나면 저장소 Settings → Pages 에서 'Enforce HTTPS' 가 켜졌는지 확인하세요.
-기존 주소(https://${PAGES_HOST}/kratos/)는 새 주소로 자동 연결됩니다.`);
+기존 주소(https://${PAGES_HOST}/)는 새 주소로 자동 연결됩니다.`);

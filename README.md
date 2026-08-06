@@ -2,7 +2,7 @@
 
 빌드 도구 없는 정적 사이트입니다. 압축을 풀고 `index.html`을 열면 바로 확인할 수 있습니다.
 
-## 🌐 https://cyb3rmaya.github.io/kratos/
+## 🌐 https://cyb3rmaya.github.io/
 
 GitHub Pages로 배포되어 있습니다. `main` 브랜치에 push하면 1~2분 뒤 자동으로 반영됩니다.
 정적 CDN이라 켜둘 서버가 없고, 계정이 살아 있는 한 URL이 유지됩니다.
@@ -181,8 +181,8 @@ f.reset();
 
 ### 현재 설정 — GitHub Pages (자동)
 
-저장소: https://github.com/cyb3rmaya/kratos
-공개 주소: **https://cyb3rmaya.github.io/kratos/**
+저장소: https://github.com/cyb3rmaya/cyb3rmaya.github.io
+공개 주소: **https://cyb3rmaya.github.io/**
 
 `main` 브랜치에 push하면 끝입니다. 별도 빌드 단계가 없어 1~2분 뒤 반영됩니다.
 HTTPS는 자동 적용되고, 서버 프로세스가 없으므로 트래픽이 없어도 잠들지 않습니다.
@@ -217,7 +217,7 @@ HTTPS는 자동 적용되고, 서버 프로세스가 없으므로 트래픽이 �
 **3) 사이트에 연결** — 저장소에서 아래 한 줄이면 끝입니다.
 
 ```bash
-node set-domain.mjs www.kratos.co.kr
+node set-domain.mjs kratos1.cloud
 ```
 
 DNS 전파에 10분~1시간, HTTPS 인증서 발급에 추가로 10~30분 걸립니다.

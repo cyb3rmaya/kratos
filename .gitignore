@@ -5,3 +5,7 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+
+# 비밀값 — 절대 커밋하지 않습니다
+.cf-token
+.domain.tmp.json
