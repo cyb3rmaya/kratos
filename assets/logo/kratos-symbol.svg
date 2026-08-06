@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="KRATOS">
+  <title>KRATOS — 심볼 (파비콘 · 앱 아이콘)</title>
+    <rect x="14" y="8" width="5" height="32" rx="2.5" fill="#4c6fff"/>
+    <path d="M19 24 L38 9" stroke="#4c6fff" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M19 24 L38 39" stroke="#22d3a6" stroke-width="5" stroke-linecap="round" fill="none"/>
+</svg>

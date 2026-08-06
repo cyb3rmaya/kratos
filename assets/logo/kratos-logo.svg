@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 196 48" width="196" height="48" role="img" aria-label="KRATOS">
+  <title>KRATOS — 헤더 로고 (심볼 + 워드마크)</title>
+    <rect x="4" y="8" width="5" height="32" rx="2.5" fill="#4c6fff"/>
+    <path d="M9 24 L28 9" stroke="#4c6fff" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M9 24 L28 39" stroke="#22d3a6" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <text x="40" y="34" font-family="Pretendard, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="29" font-weight="800" letter-spacing="-0.6" fill="#f2f4f9">KRATOS</text>
+</svg>

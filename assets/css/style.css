@@ -269,14 +269,14 @@ h1, h2, h3, h4, p { margin: 0; }
 }
 
 .logo {
-  font-family: var(--display);
-  font-weight: 900;
-  font-size: 19px;
-  letter-spacing: -0.02em;
   display: flex;
   align-items: center;
-  gap: 9px;
+  flex: none;
+  height: 30px;
+  transition: opacity 0.18s var(--ease);
 }
+.logo:hover { opacity: 0.78; }
+.logo-svg { height: 100%; width: auto; display: block; }
 .logo-mark {
   width: 26px;
   height: 26px;
