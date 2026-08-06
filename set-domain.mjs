@@ -1,7 +1,7 @@
 /* ============================================================
    set-domain.mjs — 내 도메인을 사이트에 연결합니다
 
-     node set-domain.mjs www.kratos.co.kr
+     node set-domain.mjs kratos1.cloud
 
    하는 일
      1) 도메인이 GitHub Pages 를 가리키도록 DNS 가 설정됐는지 먼저 확인
@@ -25,7 +25,7 @@ const PAGES_HOST = "cyb3rmaya.github.io";
 
 const domain = (process.argv[2] || "").trim().replace(/^https?:\/\//, "").replace(/\/$/, "");
 if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
-  console.error("사용법: node set-domain.mjs www.kratos.co.kr");
+  console.error("사용법: node set-domain.mjs kratos1.cloud");
   process.exit(1);
 }
 

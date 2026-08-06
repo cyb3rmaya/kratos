@@ -19,9 +19,17 @@
 <!-- ============ 헤더 ============ -->
 <header class="header">
   <div class="wrap">
-    <a class="logo" href="#top">
-      <span class="logo-mark" aria-hidden="true"></span>
-      <span data-cfg="brandEn">KRATOS</span>
+    <a class="logo" href="#top" aria-label="크라토스 홈">
+      <svg class="logo-svg" viewBox="0 0 240 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- K 심볼 -->
+        <g>
+          <rect x="6" y="10" width="4" height="28" fill="#4c6fff" rx="2"/>
+          <line x1="10" y1="16" x2="22" y2="10" stroke="#4c6fff" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="10" y1="24" x2="22" y2="30" stroke="#22d3a6" stroke-width="3.5" stroke-linecap="round"/>
+        </g>
+        <!-- KRATOS 텍스트 -->
+        <text x="32" y="32" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="800" letter-spacing="-0.02em" fill="#f2f4f9">KRATOS</text>
+      </svg>
     </a>
     <nav class="nav" aria-label="주요 메뉴">
       <a href="#services">분야</a>
@@ -253,10 +261,41 @@
       <span class="eyebrow">Pricing</span>
       <h2 class="sec-title">가격을 먼저 공개합니다</h2>
       <p class="sec-lead">
-        정확한 금액은 기능에 따라 달라지지만, 대략의 규모는 미리 아셔야 상담이 빠릅니다.
-        아래는 부가세 별도 기준 시작가입니다.
+        대략의 규모는 미리 아셔야 상담이 빠릅니다.
+        아래는 <b>가장 단순한 형태를 기준으로 한 시작가</b>이며, 부가세는 별도입니다.
       </p>
     </div>
+
+    <div class="price-warn reveal">
+      <span class="price-warn-tag">먼저 읽어주세요</span>
+      <p class="price-warn-lead">
+        같은 &lsquo;쇼핑몰&rsquo;이라도 견적이 <b>열 배까지</b> 차이 납니다.
+        아래 두 가지가 금액을 가장 크게 좌우합니다.
+      </p>
+      <div class="price-warn-grid">
+        <div>
+          <b>기획·디자인이 준비되어 있나요?</b>
+          <p>
+            확정된 화면 설계와 디자인 시안을 주시면 <b>개발만</b> 하면 되므로 시작가에 가깝습니다.
+            &ldquo;쇼핑몰 하나 만들어 주세요&rdquo;처럼 기획부터 함께 잡아야 하면 그만큼 늘어납니다.
+            무엇을 갖고 계신지부터 알려주세요.
+          </p>
+        </div>
+        <div>
+          <b>게임은 &lsquo;어떤 게임&rsquo;인지가 전부입니다.</b>
+          <p>
+            클릭 한 번으로 끝나는 이벤트 게임과, 캐릭터·전투·저장·랭킹 서버가 들어가는 게임은
+            같은 &lsquo;게임 개발&rsquo;이라도 자릿수가 다릅니다.
+            참고하고 싶은 게임을 하나만 알려주셔도 범위가 크게 좁혀집니다.
+          </p>
+        </div>
+      </div>
+      <p class="price-warn-foot">
+        상담 때 요구사항을 함께 정리해 <b>실제 금액을 먼저 알려드리고</b>, 그 뒤에 진행 여부를 정하셔도 됩니다.
+        견적과 상담은 무료이며, 금액이 맞지 않으면 빼도 되는 항목을 먼저 알려드립니다.
+      </p>
+    </div>
+
     <div class="plans" data-plans></div>
   </div>
 </section>

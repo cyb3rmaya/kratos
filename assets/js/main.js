@@ -904,13 +904,24 @@
   function plans() {
     const el = $("[data-plans]");
     if (!el) return;
+
+    /* 앞에 ★ 가 붙은 항목은 '가격을 가장 크게 좌우하는 조건'으로 강조합니다 */
+    const key = (s) => s.startsWith("★ ");
+    const strip = (s) => s.replace(/^★\s*/, "");
+
     el.innerHTML = PLANS.map((p) => `
       <div class="plan${p.hot ? " plan--hot" : ""} reveal" style="--dc:${DOMAIN_COLOR[p.domain] || "#4c6fff"}">
         <div class="plan-flag">${esc(p.flag)}</div>
         <h3>${esc(p.name)}</h3>
         <p class="plan-desc">${esc(p.desc)}</p>
         <div class="plan-price">${esc(p.price)}<small> ${esc(p.unit)}</small></div>
+        ${p.base ? `<p class="plan-base${key(p.base) ? " is-key" : ""}">${esc(strip(p.base))}</p>` : ""}
         <ul class="plan-feats">${p.feats.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>
+        ${p.varies && p.varies.length ? `
+          <div class="plan-varies">
+            <span class="plan-varies-h">이럴 때 금액이 올라갑니다</span>
+            <ul>${p.varies.map((v) => `<li${key(v) ? ' class="is-key"' : ""}>${esc(strip(v))}</li>`).join("")}</ul>
+          </div>` : ""}
         <a class="btn ${p.hot ? "btn--primary" : "btn--ghost"} btn--block" href="#contact">이 플랜으로 상담하기</a>
         <p class="plan-note">${esc(p.note)}</p>
       </div>`).join("");
