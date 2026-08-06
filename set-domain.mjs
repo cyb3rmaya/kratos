@@ -32,23 +32,31 @@ if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
 const sh = (cmd, args) =>
   execFileSync(cmd, args, { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 
-/* ---------- 1. DNS 확인 ---------- */
+/* ---------- 1. DNS 확인 ----------
+   로컬 리졸버는 예전 '없음' 응답을 캐시하고 있을 수 있으므로
+   공개 리졸버에도 물어봐서 하나라도 맞으면 통과시킵니다. */
 console.log(`DNS 확인 중 — ${domain}`);
 let dnsOk = false;
-try {
-  if (domain.split(".").length > 2) {
-    // www 처럼 서브도메인이면 CNAME 이 github.io 를 가리켜야 합니다
-    const c = await dns.resolveCname(domain).catch(() => []);
-    dnsOk = c.some((v) => v.replace(/\.$/, "").toLowerCase() === PAGES_HOST);
-    console.log(`  CNAME → ${c.length ? c.join(", ") : "(없음)"}`);
-  }
-  if (!dnsOk) {
-    const a = await dns.resolve4(domain).catch(() => []);
-    dnsOk = a.some((v) => PAGES_IP.includes(v));
-    console.log(`  A     → ${a.length ? a.join(", ") : "(없음)"}`);
-  }
-} catch (e) {
-  console.log("  조회 실패: " + e.message);
+
+const resolvers = [
+  ["시스템", null],
+  ["8.8.8.8", ["8.8.8.8"]],
+  ["1.1.1.1", ["1.1.1.1"]],
+];
+
+for (const [label, servers] of resolvers) {
+  const r = servers ? new dns.Resolver() : dns;
+  if (servers) r.setServers(servers);
+
+  const a = await r.resolve4(domain).catch(() => []);
+  const c = await r.resolveCname(domain).catch(() => []);
+  const hitA = a.some((v) => PAGES_IP.includes(v));
+  const hitC = c.some((v) => v.replace(/\.$/, "").toLowerCase() === PAGES_HOST);
+
+  console.log(`  [${label.padEnd(7)}] A: ${a.length ? a.join(", ") : "-"}` +
+              `  CNAME: ${c.length ? c.join(", ") : "-"}`);
+
+  if (hitA || hitC) { dnsOk = true; break; }
 }
 
 if (!dnsOk) {
