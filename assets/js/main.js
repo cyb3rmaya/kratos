@@ -1054,6 +1054,99 @@
   /* ========================================================
      실행
      ======================================================== */
+  /* ========================================================
+     15. 구조화 데이터 (JSON-LD)
+         data.js 에서 직접 만들어 넣으므로 내용을 고쳐도
+         검색엔진에 나가는 정보가 어긋나지 않습니다.
+         https://schema.org / Google 리치 리절트 규격
+     ======================================================== */
+  function jsonLd() {
+    const SITE = "https://kratos1.cloud";
+    const domainName = { web: "웹사이트 개발", macro: "업무 자동화 개발", game: "게임 개발" };
+
+    /* 회사 정보 — 지역 기반 서비스업 */
+    const org = {
+      "@type": "ProfessionalService",
+      "@id": SITE + "/#organization",
+      name: CONFIG.brandKo,
+      alternateName: CONFIG.brandEn,
+      url: SITE + "/",
+      logo: { "@type": "ImageObject", url: SITE + "/assets/logo/kratos-symbol-512.png", width: 512, height: 512 },
+      image: SITE + "/assets/logo/kratos-og.png",
+      description: "쇼핑몰·기업 홈페이지, 업무 자동화 프로그램, 웹·모바일·PC 게임을 만드는 개발 스튜디오입니다.",
+      founder: { "@type": "Person", name: CONFIG.owner },
+      foundingDate: String(CONFIG.founded),
+      email: CONFIG.email,
+      telephone: "+82-10-6588-5414",
+      priceRange: "₩₩",
+      areaServed: { "@type": "Country", name: "대한민국" },
+      knowsLanguage: "ko",
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        telephone: "+82-10-6588-5414",
+        email: CONFIG.email,
+        availableLanguage: ["Korean"],
+        // 영업일 1시간 내 회신 약속
+        hoursAvailable: {
+          "@type": "OpeningHoursSpecification",
+          dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+          opens: "00:00",
+          closes: "23:59",
+        },
+      },
+      sameAs: [CONFIG.kakao].filter(Boolean),
+      hasOfferCatalog: {
+        "@type": "OfferCatalog",
+        name: "개발 서비스",
+        itemListElement: PLANS.map((p) => ({
+          "@type": "Offer",
+          name: p.name,
+          description: p.desc,
+          category: domainName[p.domain] || "소프트웨어 개발",
+          priceCurrency: "KRW",
+          price: String(Number(p.price) * 10000),
+          eligibleQuantity: { "@type": "QuantitativeValue", minValue: 1 },
+          priceSpecification: {
+            "@type": "PriceSpecification",
+            priceCurrency: "KRW",
+            minPrice: Number(p.price) * 10000,
+            valueAddedTaxIncluded: false,
+          },
+        })),
+      },
+    };
+
+    /* 사이트 */
+    const site = {
+      "@type": "WebSite",
+      "@id": SITE + "/#website",
+      url: SITE + "/",
+      name: CONFIG.brandKo,
+      inLanguage: "ko-KR",
+      publisher: { "@id": SITE + "/#organization" },
+    };
+
+    /* 자주 묻는 질문 — 검색 결과에 그대로 노출될 수 있습니다 */
+    const faqPage = {
+      "@type": "FAQPage",
+      "@id": SITE + "/#faq",
+      mainEntity: FAQS.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    };
+
+    const graph = { "@context": "https://schema.org", "@graph": [org, site, faqPage] };
+
+    const el = document.createElement("script");
+    el.type = "application/ld+json";
+    // 닫는 script 태그가 문자열에 섞여도 안전하도록 < 를 이스케이프합니다
+    el.textContent = JSON.stringify(graph).replace(/</g, "\\u003c");
+    document.head.appendChild(el);
+  }
+
   function boot() {
     applyConfig();
     header();
@@ -1069,6 +1162,7 @@
     stats();
     form();
     reveal();
+    jsonLd();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

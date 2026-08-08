@@ -163,8 +163,14 @@ const overlayJS = `
 );
 
 /* ---------- 5. 조립 ---------- */
+/* 소스 어디든 닫는 script 태그가 그대로 들어 있으면 (주석·문자열 포함)
+   인라인 <script> 블록이 그 지점에서 끝나 버려 문법 오류가 납니다.
+   자바스크립트에서 <\/script 는 </script 와 뜻이 같으므로 안전하게 바꿔 둡니다. */
+const guardScriptTag = (src) => src.replace(/<\/(script)/gi, "<\\/$1");
+
 const js = ["assets/js/data.js", "assets/js/live-screen.js", "assets/js/main.js"]
   .map(read)
+  .map(guardScriptTag)
   .join("\n;\n");
 
 function assemble(inlineFonts) {

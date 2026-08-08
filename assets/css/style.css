@@ -42,6 +42,8 @@
   --cobalt-soft: #7d95ff;
   --cobalt-deep: #2c47cc;
   --amber: #ffb020;
+  /* 자동화 분야 · 로고에 쓰는 민트 (main.js 의 DOMAIN_COLOR.macro 와 같은 값) */
+  --mint: #22d3a6;
 
   /* 타이포 */
   --display: "Paperlogy", "Pretendard Variable", Pretendard, sans-serif;
@@ -2201,4 +2203,41 @@ h1, h2, h3, h4, p { margin: 0; }
 
 @media (max-width: 820px) {
   .price-warn-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ============================================================
+   34. 회신 약속 배지 — 문의 섹션
+   ============================================================ */
+.reply-vow {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: var(--s3);
+  padding: 16px 20px;
+  border: 1px solid color-mix(in srgb, var(--mint) 34%, transparent);
+  background: color-mix(in srgb, var(--mint) 7%, transparent);
+  border-radius: var(--r-card);
+  font-size: 14.5px;
+  font-weight: 500;
+  line-height: 1.72;
+  color: var(--muted);
+  max-width: 78ch;
+}
+.reply-vow-tag {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--mint);
+  border: 1px solid color-mix(in srgb, var(--mint) 42%, transparent);
+  padding: 3px 9px;
+  border-radius: var(--r-chip);
+}
+.reply-vow b { color: var(--text); font-weight: 700; }
+.reply-vow b:first-of-type { color: var(--mint); font-weight: 800; }
+
+@media (max-width: 620px) {
+  .reply-vow { padding: 14px 16px; font-size: 14px; }
 }
